@@ -1,0 +1,49 @@
+import { db } from '@/lib/db'
+import { rent_records } from '@/lib/db/schema'
+import { getOrgId } from '@/lib/middleware'
+import { eq, and, sql } from 'drizzle-orm'
+
+export async function GET(request: Request) {
+  const org_id = getOrgId(request)
+  const { searchParams } = new URL(request.url)
+  const month = searchParams.get('month')
+
+  if (month) {
+    const summary = await db.execute(sql`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'paid')::int    AS paid_count,
+        COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
+        COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
+        COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
+      FROM rent_records
+      WHERE org_id = ${org_id} AND month = ${month}
+    `)
+    return Response.json(summary[0])
+  }
+
+  const rows = await db
+    .select()
+    .from(rent_records)
+    .where(eq(rent_records.org_id, org_id))
+    .orderBy(rent_records.due_date)
+
+  return Response.json(rows)
+}
+
+export async function POST(request: Request) {
+  const org_id = getOrgId(request)
+  const body = await request.json()
+
+  const { tenant_id, amount, month, due_date, payment_mode } = body
+
+  if (!tenant_id || !amount || !month || !due_date) {
+    return Response.json({ error: 'tenant_id, amount, month, and due_date are required' }, { status: 400 })
+  }
+
+  const [record] = await db
+    .insert(rent_records)
+    .values({ org_id, tenant_id, amount, month, due_date, payment_mode })
+    .returning()
+
+  return Response.json(record, { status: 201 })
+}

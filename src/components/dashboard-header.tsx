@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { MapPin, LogOut, LayoutGrid } from 'lucide-react'
+import { MapPin, LogOut } from 'lucide-react'
 
 export function DashboardHeader({ orgName }: { orgName: string }) {
   const router = useRouter()
@@ -15,14 +15,9 @@ export function DashboardHeader({ orgName }: { orgName: string }) {
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0">
       <div className="flex items-center gap-2 text-sm min-w-0">
-        <div className="hidden lg:flex items-center gap-1.5 font-semibold shrink-0">
-          <LayoutGrid className="w-4 h-4" />
-          KiraayaBook
-        </div>
-        <span className="hidden lg:block text-gray-300 mx-1">|</span>
         <div className="flex items-center gap-1 text-gray-500 truncate">
           <MapPin className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate font-medium text-gray-700">{orgName}</span>
+          <span className="truncate font-semibold text-gray-900">{orgName}</span>
         </div>
       </div>
 

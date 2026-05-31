@@ -7,7 +7,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { id } = await params
   const body = await request.json()
 

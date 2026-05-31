@@ -4,7 +4,7 @@ import { getOrgId } from '@/lib/middleware'
 import { eq } from 'drizzle-orm'
 
 export async function GET(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
 
   const rows = await db
     .select()
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const body = await request.json()
 
   const { room_id, name, phone, email, cot_number, move_in_date, move_out_date } = body
@@ -27,7 +27,16 @@ export async function POST(request: Request) {
 
   const [tenant] = await db
     .insert(tenants)
-    .values({ org_id, room_id, name, phone, email, cot_number, move_in_date, move_out_date })
+    .values({
+      org_id,
+      room_id,
+      name,
+      phone,
+      email: email || undefined,
+      cot_number: cot_number || undefined,
+      move_in_date,
+      move_out_date: move_out_date || undefined,
+    })
     .returning()
 
   return Response.json(tenant, { status: 201 })

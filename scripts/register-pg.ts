@@ -15,22 +15,20 @@ async function main() {
 
   const hash = await bcrypt.hash(password, 12)
 
-  await db.transaction(async (tx) => {
-    const [org] = await tx
-      .insert(organisations)
-      .values({ name: pgName })
-      .returning()
+  const [org] = await db
+    .insert(organisations)
+    .values({ name: pgName })
+    .returning()
 
-    await tx.insert(users).values({
-      org_id:        org.id,
-      email,
-      password_hash: hash,
-      role:          'owner',
-    })
-
-    console.log(`\nDone! Created org: ${org.id}`)
-    console.log(`PG "${pgName}" registered. Owner can now log in with ${email}\n`)
+  await db.insert(users).values({
+    org_id:        org.id,
+    email,
+    password_hash: hash,
+    role:          'owner',
   })
+
+  console.log(`\nDone! Created org: ${org.id}`)
+  console.log(`PG "${pgName}" registered. Owner can now log in with ${email}\n`)
 
   rl.close()
   process.exit(0)

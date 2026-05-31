@@ -7,7 +7,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { id } = await params
 
   const [tenant] = await db
@@ -23,13 +23,19 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { id } = await params
   const body = await request.json()
+  const normalized = {
+    ...body,
+    email: body.email || undefined,
+    cot_number: body.cot_number || undefined,
+    move_out_date: body.move_out_date || undefined,
+  }
 
   const [tenant] = await db
     .update(tenants)
-    .set(body)
+    .set(normalized)
     .where(and(eq(tenants.id, id), eq(tenants.org_id, org_id)))
     .returning()
 
@@ -41,7 +47,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { id } = await params
 
   const [tenant] = await db

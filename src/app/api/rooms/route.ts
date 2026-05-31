@@ -4,9 +4,9 @@ import { getOrgId } from '@/lib/middleware'
 import { eq, sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
 
-  const rows = await db.execute(sql`
+  const result = await db.execute(sql`
     SELECT
       r.id, r.room_number, r.floor, r.type, r.capacity,
       COUNT(t.id)::int              AS occupied,
@@ -19,11 +19,12 @@ export async function GET(request: Request) {
     ORDER BY r.room_number
   `)
 
+  const rows = Array.isArray(result) ? result : result?.rows ?? []
   return Response.json(rows)
 }
 
 export async function POST(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const body = await request.json()
 
   const { room_number, capacity, floor, type } = body

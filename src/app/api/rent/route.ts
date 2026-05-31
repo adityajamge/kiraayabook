@@ -4,12 +4,12 @@ import { getOrgId } from '@/lib/middleware'
 import { eq, and, sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month')
 
   if (month) {
-    const summary = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT
         COUNT(*) FILTER (WHERE status = 'paid')::int    AS paid_count,
         COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
@@ -18,7 +18,9 @@ export async function GET(request: Request) {
       FROM rent_records
       WHERE org_id = ${org_id} AND month = ${month}
     `)
-    return Response.json(summary[0])
+    const rows = Array.isArray(result) ? result : result?.rows ?? []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return Response.json((rows as any)[0])
   }
 
   const rows = await db
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const body = await request.json()
 
   const { tenant_id, amount, month, due_date, payment_mode } = body

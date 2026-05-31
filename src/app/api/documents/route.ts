@@ -11,7 +11,7 @@ cloudinary.config({
 })
 
 export async function GET(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const { searchParams } = new URL(request.url)
   const tenant_id = searchParams.get('tenant_id')
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const org_id = getOrgId(request)
+  const org_id = await getOrgId(request)
   const formData = await request.formData()
 
   const file = formData.get('file') as File | null

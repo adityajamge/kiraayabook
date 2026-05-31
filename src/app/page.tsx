@@ -45,12 +45,12 @@ export default async function HomePage() {
           PG management, made simple
         </div>
 
-        <h1 className="text-5xl font-bold tracking-tight mb-3">KiraayaBook</h1>
-        <p className="text-gray-500 text-lg mb-10">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">KiraayaBook</h1>
+        <p className="text-gray-500 text-base sm:text-lg mb-10">
           Manage your PG — tenants, rooms, rent, all in one place.
         </p>
 
-        <div className="grid grid-cols-2 gap-3 mb-10 w-full max-w-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10 w-full max-w-lg">
           {features.map(({ icon: Icon, text }) => (
             <div
               key={text}

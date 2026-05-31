@@ -54,7 +54,19 @@ export default function TenantDetailPage() {
     load()
   }
 
-  if (!tenant) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Loading...</div>
+  if (!tenant) return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-6 w-32 bg-gray-200 rounded-md" />
+      <div className="h-8 w-48 bg-gray-200 rounded-md" />
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i}><div className="h-3 w-16 bg-gray-200 rounded-md mb-2" /><div className="h-4 w-28 bg-gray-200 rounded-md" /></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div>
@@ -68,7 +80,7 @@ export default function TenantDetailPage() {
       {/* Info card */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         <h2 className="font-semibold mb-4">Tenant Information</h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
             ['Phone', tenant.phone],
             ['Email', tenant.email ?? '—'],

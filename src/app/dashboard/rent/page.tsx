@@ -83,12 +83,12 @@ export default function RentPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Rent</h1>
+          <h1 className="text-xl lg:text-2xl font-bold">Rent</h1>
           <p className="text-gray-500 text-sm mt-0.5">Track rent collection and dues</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <input type="month" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
@@ -158,8 +158,8 @@ export default function RentPage() {
       ) : records.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No rent records for this month.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full min-w-200 text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 {['TENANT', 'ROOM', 'MONTH', 'AMOUNT', 'DUE DATE', 'MODE', 'STATUS', 'ACTIONS'].map((h) => (

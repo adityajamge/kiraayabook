@@ -56,9 +56,9 @@ export default function DocumentsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Documents</h1>
+          <h1 className="text-xl lg:text-2xl font-bold">Documents</h1>
           <p className="text-gray-500 text-sm mt-0.5">Tenant identity and verification documents</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -107,8 +107,8 @@ export default function DocumentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-45 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by tenant or type"
             className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
@@ -125,8 +125,8 @@ export default function DocumentsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No documents found.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full min-w-120 text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 {['TENANT', 'DOCUMENT TYPE', 'UPLOADED ON', 'VIEW'].map((h) => (

@@ -5,6 +5,7 @@ import { organisations } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { Sidebar } from '@/components/sidebar'
 import { DashboardHeader } from '@/components/dashboard-header'
+import { BottomNav } from '@/components/bottom-nav'
 import { verifyJwt } from '@/lib/auth'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -28,10 +29,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader orgName={orgName} />
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
+        <main className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-6 pb-20 lg:pb-6">
           {children}
         </main>
       </div>
+      <BottomNav />
     </div>
   )
 }

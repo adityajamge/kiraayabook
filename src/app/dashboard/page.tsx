@@ -72,13 +72,13 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+      <div className="mb-5">
+        <h1 className="text-xl lg:text-2xl font-bold">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-0.5">{"Here's what's happening at your PG today."}</p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-500">Total Rooms</span>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
               <Building2 className="w-4 h-4 text-gray-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold">{stats.total_rooms}</p>
+          <p className="text-2xl lg:text-3xl font-bold">{stats.total_rooms}</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-5">
@@ -96,9 +96,9 @@ export default function DashboardPage() {
               <BedDouble className="w-4 h-4 text-gray-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold">
+          <p className="text-2xl lg:text-3xl font-bold">
             {stats.total_occupied}
-            <span className="text-lg text-gray-400 font-normal">/{stats.total_capacity}</span>
+            <span className="text-base lg:text-lg text-gray-400 font-normal">/{stats.total_capacity}</span>
           </p>
           <p className="text-xs text-gray-400 mt-1">occupied</p>
         </div>
@@ -110,7 +110,7 @@ export default function DashboardPage() {
               <span className="text-gray-600 font-bold text-sm">₹</span>
             </div>
           </div>
-          <p className="text-3xl font-bold">{fmt(stats.rent_collected)}</p>
+          <p className="text-xl lg:text-3xl font-bold">{fmt(stats.rent_collected)}</p>
           <p className="text-xs text-gray-400 mt-1">This month</p>
         </div>
 
@@ -121,13 +121,13 @@ export default function DashboardPage() {
               <AlertCircle className="w-4 h-4 text-red-500" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-red-600">{fmt(stats.rent_pending)}</p>
+          <p className="text-xl lg:text-3xl font-bold text-red-600">{fmt(stats.rent_pending)}</p>
           <p className="text-xs text-gray-400 mt-1">This month</p>
         </div>
       </div>
 
       {/* Panels */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pending rent */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">

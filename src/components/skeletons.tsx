@@ -10,7 +10,7 @@ export function DashboardSkeleton() {
         <Sk className="h-4 w-72" />
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
@@ -23,7 +23,7 @@ export function DashboardSkeleton() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {[...Array(2)].map((_, i) => (
           <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
@@ -65,8 +65,8 @@ export function TableSkeleton({
   hasAvatar?: boolean
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <table className="w-full">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+      <table className="w-full min-w-120">
         <thead>
           <tr className="border-b border-gray-100">
             {[...Array(cols)].map((_, i) => (

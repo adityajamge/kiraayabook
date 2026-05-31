@@ -71,9 +71,9 @@ export default function RoomsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Rooms</h1>
+          <h1 className="text-xl lg:text-2xl font-bold">Rooms</h1>
           <p className="text-gray-500 text-sm mt-0.5">Manage all rooms and their capacity</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm) } }}>
@@ -164,8 +164,8 @@ export default function RoomsPage() {
       ) : rooms.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No rooms yet. Add your first room.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 {['ROOM NUMBER', 'FLOOR', 'TYPE', 'CAPACITY', 'OCCUPIED', 'VACANT', 'ACTIONS'].map((h) => (

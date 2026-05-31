@@ -81,9 +81,9 @@ export default function TenantsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Tenants</h1>
+          <h1 className="text-xl lg:text-2xl font-bold">Tenants</h1>
           <p className="text-gray-500 text-sm mt-0.5">Manage all your paying guests in one place.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
@@ -158,8 +158,8 @@ export default function TenantsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-45 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone"
             className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
@@ -180,8 +180,8 @@ export default function TenantsPage() {
       {loading ? (
         <TableSkeleton cols={7} hasAvatar />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full min-w-175 text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 {['NAME', 'PHONE NUMBER', 'ROOM', 'COT', 'MOVE-IN DATE', 'STATUS', ''].map((h, i) => (

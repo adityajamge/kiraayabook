@@ -1,8 +1,13 @@
-import { pgTable, uuid, text, integer, date, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, date, timestamp, boolean } from 'drizzle-orm/pg-core'
 
 export const organisations = pgTable('organisations', {
   id:         uuid('id').defaultRandom().primaryKey(),
   name:       text('name').notNull(),
+  owner_name: text('owner_name'),
+  phone:      text('phone'),
+  address:    text('address'),
+  logo_url:   text('logo_url'),
+  dark_mode:  boolean('dark_mode').notNull().default(false),
   plan:       text('plan').notNull().default('starter'),
   created_at: timestamp('created_at').defaultNow(),
 })

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Upload, ExternalLink, Pencil } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 interface Tenant {
@@ -13,16 +13,39 @@ interface Tenant {
 interface Document { id: string; doc_type: string; file_url: string; uploaded_at: string }
 interface Room { id: string; room_number: string }
 
+type EditForm = {
+  name: string; phone: string; email: string; room_id: string
+  cot_number: string; move_in_date: string; move_out_date: string; status: string
+}
+
+function tenantToForm(t: Tenant): EditForm {
+  return {
+    name:          t.name,
+    phone:         t.phone,
+    email:         t.email ?? '',
+    room_id:       t.room_id,
+    cot_number:    t.cot_number ?? '',
+    move_in_date:  t.move_in_date,
+    move_out_date: t.move_out_date ?? '',
+    status:        t.status,
+  }
+}
+
 export default function TenantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [docs, setDocs] = useState<Document[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
+
   const [uploadOpen, setUploadOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [docType, setDocType] = useState('aadhaar')
   const [uploading, setUploading] = useState(false)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState<EditForm | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => { load() }, [id])
 
@@ -32,13 +55,37 @@ export default function TenantDetailPage() {
       fetch(`/api/documents?tenant_id=${id}`),
       fetch('/api/rooms'),
     ])
-    setTenant(await tr.json())
+    const tenantData: Tenant = await tr.json()
+    setTenant(tenantData)
+    setEditForm(tenantToForm(tenantData))
     setDocs(await dr.json())
-    const roomData = await rr.json()
-    setRooms(roomData)
+    setRooms(await rr.json())
   }
 
   const roomMap = Object.fromEntries(rooms.map((r: Room) => [r.id, r.room_number]))
+
+  const setField = (k: keyof EditForm, v: string) =>
+    setEditForm(f => f ? { ...f, [k]: v } : f)
+
+  const handleSave = async () => {
+    if (!editForm) return
+    setSaving(true)
+    const res = await fetch(`/api/tenants/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...editForm,
+        email:         editForm.email || undefined,
+        cot_number:    editForm.cot_number || undefined,
+        move_out_date: editForm.move_out_date || undefined,
+      }),
+    })
+    const updated: Tenant = await res.json()
+    setTenant(updated)
+    setEditForm(tenantToForm(updated))
+    setSaving(false)
+    setEditOpen(false)
+  }
 
   const handleUpload = async () => {
     if (!file) return
@@ -54,7 +101,7 @@ export default function TenantDetailPage() {
     load()
   }
 
-  if (!tenant) return (
+  if (!tenant || !editForm) return (
     <div className="animate-pulse space-y-4">
       <div className="h-6 w-32 bg-gray-200 rounded-md" />
       <div className="h-8 w-48 bg-gray-200 rounded-md" />
@@ -74,8 +121,85 @@ export default function TenantDetailPage() {
         <ArrowLeft className="w-4 h-4" />Back to tenants
       </button>
 
-      <h1 className="text-2xl font-bold mb-1">{tenant.name}</h1>
-      <p className="text-gray-500 text-sm mb-6">Tenant details and documents</p>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">{tenant.name}</h1>
+          <p className="text-gray-500 text-sm">Tenant details and documents</p>
+        </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogTrigger asChild>
+            <button className="flex items-center gap-1.5 border border-gray-200 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shrink-0">
+              <Pencil className="w-3.5 h-3.5" />Edit
+            </button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Edit Tenant</DialogTitle></DialogHeader>
+            <div className="space-y-3 mt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
+                  <input value={editForm.name} onChange={e => setField('name', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
+                  <input value={editForm.phone} onChange={e => setField('phone', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input type="email" value={editForm.email} onChange={e => setField('email', e.target.value)} placeholder="Optional"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
+                  <select value={editForm.room_id} onChange={e => setField('room_id', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                    {rooms.map(r => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cot</label>
+                  <input value={editForm.cot_number} onChange={e => setField('cot_number', e.target.value)} placeholder="e.g. C1, Top Bunk"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
+                  <input type="date" value={editForm.move_in_date} onChange={e => setField('move_in_date', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Move-out Date</label>
+                  <input type="date" value={editForm.move_out_date} onChange={e => setField('move_out_date', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select value={editForm.status} onChange={e => setField('status', e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                  <option value="active">Active</option>
+                  <option value="vacated">Vacated</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setEditOpen(false)}
+                  className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onClick={handleSave} disabled={saving || !editForm.name || !editForm.phone || !editForm.room_id}
+                  className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Info card */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">

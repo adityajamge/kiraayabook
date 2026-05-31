@@ -6,25 +6,32 @@ import { eq } from 'drizzle-orm'
 import { Sidebar } from '@/components/sidebar'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { BottomNav } from '@/components/bottom-nav'
+import { DarkModeInit } from '@/components/dark-mode-init'
 import { verifyJwt } from '@/lib/auth'
 import type { Metadata } from 'next'
 
-async function getOrgName(): Promise<string> {
+type OrgData = {
+  name: string
+  logo_url: string | null
+  dark_mode: boolean
+}
+
+async function getOrgData(): Promise<OrgData | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get('kiraayabook_token')?.value
-  if (!token) return 'PG Management'
+  if (!token) return null
   const payload = await verifyJwt(token)
-  if (!payload) return 'PG Management'
+  if (!payload) return null
   const [org] = await db
-    .select({ name: organisations.name })
+    .select({ name: organisations.name, logo_url: organisations.logo_url, dark_mode: organisations.dark_mode })
     .from(organisations)
     .where(eq(organisations.id, payload.org_id))
-  return org?.name ?? 'Your PG'
+  return org ?? null
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const orgName = await getOrgName()
-  return { title: orgName }
+  const org = await getOrgData()
+  return { title: org?.name ?? 'Dashboard' }
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,14 +42,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const payload = await verifyJwt(token)
   if (!payload) redirect('/login')
 
-  const orgName = await getOrgName()
+  const org = await getOrgData()
+  const orgName = org?.name ?? 'Your PG'
+  const logoUrl = org?.logo_url ?? null
+  const darkMode = org?.dark_mode ?? false
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar orgName={orgName} />
+      <DarkModeInit dark={darkMode} />
+      <Sidebar orgName={orgName} logoUrl={logoUrl} />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader orgName={orgName} />
-        <main className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-6 pb-20 lg:pb-6">
+        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950 p-4 lg:p-6 pb-20 lg:pb-6">
           {children}
         </main>
       </div>

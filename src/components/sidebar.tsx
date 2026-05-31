@@ -2,28 +2,34 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, CreditCard, FileText, LayoutGrid } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, CreditCard, FileText, LayoutGrid, Settings } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 const nav = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/rooms', icon: Building2, label: 'Rooms' },
-  { href: '/dashboard/tenants', icon: Users, label: 'Tenants' },
-  { href: '/dashboard/rent', icon: CreditCard, label: 'Rent' },
-  { href: '/dashboard/documents', icon: FileText, label: 'Documents' },
+  { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/dashboard/rooms',     icon: Building2,       label: 'Rooms' },
+  { href: '/dashboard/tenants',   icon: Users,           label: 'Tenants' },
+  { href: '/dashboard/rent',      icon: CreditCard,      label: 'Rent' },
+  { href: '/dashboard/documents', icon: FileText,        label: 'Documents' },
+  { href: '/dashboard/settings',  icon: Settings,        label: 'Settings' },
 ]
 
-export function Sidebar({ orgName }: { orgName: string }) {
+export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: string | null }) {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden lg:flex w-56 xl:w-64 bg-white border-r border-gray-200 flex-col shrink-0">
-      <div className="p-4 border-b border-gray-200">
+    <aside className="hidden lg:flex w-56 xl:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col shrink-0">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <LayoutGrid className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+            {logoUrl ? (
+              <Image src={logoUrl} alt="logo" width={32} height={32} className="object-cover w-full h-full" />
+            ) : (
+              <LayoutGrid className="w-4 h-4 text-white dark:text-black" />
+            )}
           </div>
-          <span className="font-bold text-base truncate">{orgName}</span>
+          <span className="font-bold text-base truncate dark:text-white">{orgName}</span>
         </div>
       </div>
 
@@ -40,8 +46,8 @@ export function Sidebar({ orgName }: { orgName: string }) {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 active
-                  ? 'bg-black text-white'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               )}
             >
               <Icon className="w-4 h-4" />

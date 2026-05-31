@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 interface Tenant {
   id: string; name: string; phone: string; email: string | null
   room_id: string; cot_number: string | null; move_in_date: string
-  move_out_date: string | null; status: string
+  move_out_date: string | null; status: string; rent_amount: number | null
 }
 interface Document { id: string; doc_type: string; file_url: string; uploaded_at: string }
 interface Room { id: string; room_number: string }
@@ -16,6 +16,7 @@ interface Room { id: string; room_number: string }
 type EditForm = {
   name: string; phone: string; email: string; room_id: string
   cot_number: string; move_in_date: string; move_out_date: string; status: string
+  rent_amount: string
 }
 
 function tenantToForm(t: Tenant): EditForm {
@@ -28,6 +29,7 @@ function tenantToForm(t: Tenant): EditForm {
     move_in_date:  t.move_in_date,
     move_out_date: t.move_out_date ?? '',
     status:        t.status,
+    rent_amount:   t.rent_amount != null ? String(t.rent_amount) : '',
   }
 }
 
@@ -180,13 +182,20 @@ export default function TenantDetailPage() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
-                <select value={editForm.status} onChange={e => setField('status', e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
-                  <option value="active">Active</option>
-                  <option value="vacated">Vacated</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select value={editForm.status} onChange={e => setField('status', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                    <option value="active">Active</option>
+                    <option value="vacated">Vacated</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
+                  <input type="number" min="0" value={editForm.rent_amount} onChange={e => setField('rent_amount', e.target.value)} placeholder="e.g. 5000"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                </div>
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setEditOpen(false)}
@@ -210,6 +219,7 @@ export default function TenantDetailPage() {
             ['Email', tenant.email ?? '—'],
             ['Room', roomMap[tenant.room_id] ? `Room ${roomMap[tenant.room_id]}` : '—'],
             ['Cot', tenant.cot_number ?? '—'],
+            ['Monthly Rent', tenant.rent_amount != null ? `₹${tenant.rent_amount.toLocaleString('en-IN')}` : '—'],
             ['Move-in', new Date(tenant.move_in_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })],
             ['Move-out', tenant.move_out_date ? new Date(tenant.move_out_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'],
             ['Status', null],

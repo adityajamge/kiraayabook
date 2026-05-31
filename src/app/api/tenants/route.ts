@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   const org_id = await getOrgId(request)
   const body = await request.json()
 
-  const { room_id, name, phone, email, cot_number, move_in_date, move_out_date } = body
+  const { room_id, name, phone, email, cot_number, move_in_date, move_out_date, rent_amount } = body
 
   if (!room_id || !name || !phone || !move_in_date) {
     return Response.json({ error: 'room_id, name, phone, and move_in_date are required' }, { status: 400 })
@@ -32,10 +32,11 @@ export async function POST(request: Request) {
       room_id,
       name,
       phone,
-      email: email || undefined,
-      cot_number: cot_number || undefined,
+      email:         email || undefined,
+      cot_number:    cot_number || undefined,
       move_in_date,
       move_out_date: move_out_date || undefined,
+      rent_amount:   rent_amount ? Number(rent_amount) : undefined,
     })
     .returning()
 

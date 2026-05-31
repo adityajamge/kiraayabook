@@ -29,7 +29,7 @@ function initials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
-const emptyForm = { name: '', phone: '', email: '', room_id: '', cot_number: '', move_in_date: '', move_out_date: '' }
+const emptyForm = { name: '', phone: '', email: '', room_id: '', cot_number: '', move_in_date: '', move_out_date: '', rent_amount: '' }
 
 export default function TenantsPage() {
   const router = useRouter()
@@ -69,7 +69,7 @@ export default function TenantsPage() {
     await fetch('/api/tenants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, email: form.email || undefined, cot_number: form.cot_number || undefined }),
+      body: JSON.stringify({ ...form, email: form.email || undefined, cot_number: form.cot_number || undefined, rent_amount: form.rent_amount || undefined }),
     })
     setSaving(false)
     setOpen(false)
@@ -131,6 +131,11 @@ export default function TenantsPage() {
                   <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1, Top Bunk"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
+                <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

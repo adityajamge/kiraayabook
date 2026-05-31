@@ -42,6 +42,7 @@ export const tenants = pgTable('tenants', {
   move_in_date:  date('move_in_date').notNull(),
   move_out_date: date('move_out_date'),
   status:        text('status').notNull().default('active'),
+  rent_amount:   integer('rent_amount'),
   created_at:    timestamp('created_at').defaultNow(),
 })
 

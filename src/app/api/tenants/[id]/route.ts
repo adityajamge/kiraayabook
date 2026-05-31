@@ -28,9 +28,10 @@ export async function PATCH(
   const body = await request.json()
   const normalized = {
     ...body,
-    email: body.email || undefined,
-    cot_number: body.cot_number || undefined,
+    email:         body.email || undefined,
+    cot_number:    body.cot_number || undefined,
     move_out_date: body.move_out_date || undefined,
+    rent_amount:   body.rent_amount ? Number(body.rent_amount) : undefined,
   }
 
   const [tenant] = await db

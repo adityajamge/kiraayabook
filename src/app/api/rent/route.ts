@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { rent_records } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
         COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
         COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
       FROM rent_records
-      WHERE org_id = ${org_id} AND month = ${month}
+      WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month}
     `)
     const rows = Array.isArray(result) ? result : result?.rows ?? []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,15 +36,15 @@ export async function POST(request: Request) {
   const org_id = await getOrgId(request)
   const body = await request.json()
 
-  const { tenant_id, amount, month, due_date, payment_mode } = body
+  const { tenant_id, amount, period_start, period_end, due_date, payment_mode } = body
 
-  if (!tenant_id || !amount || !month || !due_date) {
-    return Response.json({ error: 'tenant_id, amount, month, and due_date are required' }, { status: 400 })
+  if (!tenant_id || !amount || !period_start || !period_end || !due_date) {
+    return Response.json({ error: 'tenant_id, amount, period_start, period_end, and due_date are required' }, { status: 400 })
   }
 
   const [record] = await db
     .insert(rent_records)
-    .values({ org_id, tenant_id, amount, month, due_date, payment_mode })
+    .values({ org_id, tenant_id, amount, period_start, period_end, due_date, payment_mode })
     .returning()
 
   return Response.json(record, { status: 201 })

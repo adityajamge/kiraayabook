@@ -90,8 +90,11 @@ export default function DocumentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">File <span className="text-red-500">*</span></label>
-                <input type="file" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="w-full text-sm" />
+                <label className="flex items-center gap-3 w-full border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <span className="shrink-0 bg-black text-white text-xs font-medium px-3 py-1 rounded-md">Choose File</span>
+                  <span className="text-sm text-gray-500 truncate">{file ? file.name : 'No file chosen'}</span>
+                  <input type="file" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
+                </label>
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setOpen(false)}

@@ -19,7 +19,7 @@ interface PendingTenant {
   phone: string
   room_number: string
   amount: number
-  month: string
+  due_date: string
 }
 
 interface VacantRoom {
@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
   const sendWhatsApp = (tenant: PendingTenant) => {
     const msg = encodeURIComponent(
-      `Hi ${tenant.tenant_name}, your rent of ₹${tenant.amount} for ${tenant.month} is due. Please pay at the earliest. - KiraayaBook`
+      `Hi ${tenant.tenant_name}, your rent of ₹${tenant.amount} due on ${new Date(tenant.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} is pending. Please pay at the earliest. - KiraayaBook`
     )
     window.open(`https://wa.me/91${tenant.phone}?text=${msg}`, '_blank')
   }

@@ -36,27 +36,27 @@ export async function GET(request: Request) {
       COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
       COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
     FROM rent_records
-    WHERE org_id = ${org_id} AND month = ${month}
+    WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month}
   `)
   )
 
   const pendingRent = rowsOf<{
     id: string
     amount: number
-    month: string
+    due_date: string
     tenant_id: string
     tenant_name: string
     phone: string
     room_number: string
   }>(
     await db.execute(sql`
-    SELECT rr.id, rr.amount, rr.month,
+    SELECT rr.id, rr.amount, rr.due_date,
       t.id AS tenant_id, t.name AS tenant_name, t.phone,
       r.room_number
     FROM rent_records rr
     JOIN tenants t ON t.id = rr.tenant_id
     JOIN rooms r   ON r.id  = t.room_id
-    WHERE rr.org_id = ${org_id} AND rr.month = ${month} AND rr.status = 'pending'
+    WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending'
     ORDER BY rr.amount DESC
   `)
   )

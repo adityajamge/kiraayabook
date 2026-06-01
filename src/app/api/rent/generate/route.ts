@@ -1,0 +1,72 @@
+import { db } from '@/lib/db'
+import { tenants, rent_records } from '@/lib/db/schema'
+import { getOrgId } from '@/lib/middleware'
+import { eq, and, sql } from 'drizzle-orm'
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Due date for current cycle = joining_day of current month
+function currentCycleDates(moveInDate: string): { due_date: string; period_start: string; period_end: string } {
+  const day = parseInt(moveInDate.split('-')[2])
+  const now = new Date()
+  const due = new Date(now.getFullYear(), now.getMonth(), day)
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, day)
+  const end = new Date(now.getFullYear(), now.getMonth(), day - 1)
+  return {
+    due_date:     localDateStr(due),
+    period_start: localDateStr(start),
+    period_end:   localDateStr(end),
+  }
+}
+
+export async function POST(request: Request) {
+  const org_id = await getOrgId(request)
+
+  const activeTenants = await db
+    .select()
+    .from(tenants)
+    .where(and(eq(tenants.org_id, org_id), eq(tenants.status, 'active')))
+
+  for (const tenant of activeTenants) {
+    if (!tenant.rent_amount) continue
+
+    const { due_date, period_start, period_end } = currentCycleDates(tenant.move_in_date)
+
+    const [existing] = await db
+      .select({ id: rent_records.id })
+      .from(rent_records)
+      .where(and(
+        eq(rent_records.tenant_id, tenant.id),
+        eq(rent_records.due_date, due_date),
+      ))
+
+    if (!existing) {
+      await db.insert(rent_records).values({
+        org_id,
+        tenant_id:    tenant.id,
+        amount:       tenant.rent_amount,
+        period_start,
+        period_end,
+        due_date,
+        status:       'pending',
+      })
+    }
+  }
+
+  // Return all current-cycle records for this org
+  const rows = await db.execute(sql`
+    SELECT rr.*, t.name AS tenant_name, t.phone, t.room_id, t.rent_amount,
+           r.room_number
+    FROM rent_records rr
+    JOIN tenants t ON t.id = rr.tenant_id
+    JOIN rooms r   ON r.id = t.room_id
+    WHERE rr.org_id = ${org_id}
+      AND TO_CHAR(rr.due_date, 'YYYY-MM') = TO_CHAR(NOW(), 'YYYY-MM')
+    ORDER BY rr.status DESC, t.name ASC
+  `)
+
+  const records = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows ?? []
+  return Response.json(records)
+}

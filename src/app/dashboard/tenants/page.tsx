@@ -2,16 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Eye, Search } from 'lucide-react'
+import { Plus, Eye, Search, CheckCircle, MessageCircle, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 interface Room { id: string; room_number: string }
 interface Tenant {
@@ -24,16 +18,35 @@ interface Tenant {
   move_in_date: string
   move_out_date: string | null
   status: string
+  rent_amount: number | null
+}
+interface CollectRecord {
+  id: string
+  tenant_id: string
+  tenant_name: string
+  phone: string
+  room_number: string
+  rent_amount: number | null
+  amount: number
+  due_date: string
+  paid_date: string | null
+  payment_mode: string | null
+  status: string
 }
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
+function fmt(n: number) { return `₹${n.toLocaleString('en-IN')}` }
+
 const emptyForm = { name: '', phone: '', email: '', room_id: '', cot_number: '', move_in_date: '', move_out_date: '', rent_amount: '' }
 
 export default function TenantsPage() {
   const router = useRouter()
+  const [tab, setTab] = useState<'tenants' | 'collect'>('tenants')
+
+  // — Tenants tab state
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [search, setSearch] = useState('')
@@ -44,15 +57,34 @@ export default function TenantsPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { load() }, [])
+  // — Collect Rent tab state
+  const [collectRecords, setCollectRecords] = useState<CollectRecord[]>([])
+  const [collectFilter, setCollectFilter] = useState<'pending' | 'all'>('pending')
+  const [collectLoading, setCollectLoading] = useState(false)
+  const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null)
+  const [payMode, setPayMode] = useState('cash')
+  const [marking, setMarking] = useState(false)
 
-  const load = async () => {
+  useEffect(() => { loadAll() }, [])
+
+  const loadAll = async () => {
     const [tr, rr] = await Promise.all([fetch('/api/tenants'), fetch('/api/rooms')])
     setTenants(await tr.json())
     const roomData = await rr.json()
-    setRooms(roomData.map((r: Room & { room_number: string }) => ({ id: r.id, room_number: r.room_number })))
+    setRooms(roomData.map((r: Room) => ({ id: r.id, room_number: r.room_number })))
     setLoading(false)
   }
+
+  const loadCollect = async () => {
+    setCollectLoading(true)
+    const res = await fetch('/api/rent/generate', { method: 'POST' })
+    setCollectRecords(await res.json())
+    setCollectLoading(false)
+  }
+
+  useEffect(() => {
+    if (tab === 'collect') loadCollect()
+  }, [tab])
 
   const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_number]))
 
@@ -63,6 +95,10 @@ export default function TenantsPage() {
     const matchStatus = !statusFilter || t.status === statusFilter
     return matchSearch && matchRoom && matchStatus
   })
+
+  const visibleCollect = collectFilter === 'pending'
+    ? collectRecords.filter((r) => r.status === 'pending')
+    : collectRecords
 
   const handleSave = async () => {
     if (!form.name || !form.phone || !form.room_id || !form.move_in_date) {
@@ -91,173 +127,325 @@ export default function TenantsPage() {
     }
     setOpen(false)
     setForm(emptyForm)
-    load()
+    loadAll()
+  }
+
+  const handleMarkPaid = async () => {
+    if (!payDialog) return
+    setMarking(true)
+    await fetch(`/api/rent/${payDialog.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_mode: payMode }),
+    })
+    setMarking(false)
+    setPayDialog(null)
+    setPayMode('cash')
+    loadCollect()
+  }
+
+  const sendWhatsApp = (r: CollectRecord) => {
+    const dueStr = new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    const msg = encodeURIComponent(
+      `Hi ${r.tenant_name}, your rent of ${fmt(r.amount)} is due on ${dueStr}. Please pay at the earliest. - KiraayaBook`
+    )
+    window.open(`https://wa.me/91${r.phone}?text=${msg}`, '_blank')
   }
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
+  const pendingCount = collectRecords.filter((r) => r.status === 'pending').length
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold">Tenants</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Manage all your paying guests in one place.</p>
+          <p className="text-gray-500 text-sm mt-0.5">Manage tenants and collect rent.</p>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-1.5 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-              <Plus className="w-4 h-4" />
-              Add Tenant
-            </button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Tenant</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 mt-2">
-              <div className="grid grid-cols-2 gap-3">
+        {tab === 'tenants' && (
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-1.5 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                <Plus className="w-4 h-4" />Add Tenant
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader><DialogTitle>Add Tenant</DialogTitle></DialogHeader>
+              <div className="space-y-3 mt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
+                    <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
+                    <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit number"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  </div>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
-                  <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Optional"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
+                    <select value={form.room_id} onChange={(e) => set('room_id', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                      <option value="">Select room</option>
+                      {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Cot</label>
+                    <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  </div>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
-                  <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit number"
+                  <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
+                  <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Optional"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
-                  <select value={form.room_id} onChange={(e) => set('room_id', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
-                    <option value="">Select room</option>
-                    {rooms.map((r) => (
-                      <option key={r.id} value={r.id}>Room {r.room_number}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
+                    <input type="date" value={form.move_in_date} onChange={(e) => set('move_in_date', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Move-out Date</label>
+                    <input type="date" value={form.move_out_date} onChange={(e) => set('move_out_date', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Cot</label>
-                  <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1, Top Bunk"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setOpen(false)}
+                    className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                  <button onClick={handleSave} disabled={saving}
+                    className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
-                <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
-                  <input type="date" value={form.move_in_date} onChange={(e) => set('move_in_date', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Move-out Date</label>
-                  <input type="date" value={form.move_out_date} onChange={(e) => set('move_out_date', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                </div>
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => setOpen(false)}
-                  className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button onClick={handleSave} disabled={saving}
-                  className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-5">
+        <button onClick={() => setTab('tenants')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-700'}`}>
+          All Tenants
+        </button>
+        <button onClick={() => setTab('collect')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${tab === 'collect' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-700'}`}>
+          Collect Rent
+          {pendingCount > 0 && tab !== 'collect' && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">{pendingCount}</span>
+          )}
+        </button>
+      </div>
+
+      {/* ── All Tenants tab ── */}
+      {tab === 'tenants' && (
+        <>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="relative flex-1 min-w-45 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone"
+                className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+              <option value="">Room</option>
+              {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+              <option value="">Status</option>
+              <option value="active">Active</option>
+              <option value="vacated">Vacated</option>
+            </select>
+          </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="relative flex-1 min-w-45 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone"
-            className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
-        </div>
-        <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
-          <option value="">Room</option>
-          {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
-          <option value="">Status</option>
-          <option value="active">Active</option>
-          <option value="vacated">Vacated</option>
-        </select>
-      </div>
-
-      {loading ? (
-        <TableSkeleton cols={7} hasAvatar />
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-          <table className="w-full min-w-175 text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {['NAME', 'PHONE NUMBER', 'ROOM', 'COT', 'MOVE-IN DATE', 'STATUS', ''].map((h, i) => (
-                  <th key={i} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">No tenants found.</td></tr>
-              ) : (
-                filtered.map((t) => (
-                  <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
-                          {initials(t.name)}
-                        </div>
-                        <span className="font-medium">{t.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-gray-500">{t.phone}</td>
-                    <td className="px-5 py-4">{roomMap[t.room_id] ?? '—'}</td>
-                    <td className="px-5 py-4 text-gray-500">{t.cot_number ?? '—'}</td>
-                    <td className="px-5 py-4 text-gray-500">
-                      {new Date(t.move_in_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={
-                        t.status === 'active'
-                          ? 'bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full'
-                          : 'bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full'
-                      }>
-                        {t.status === 'active' ? 'Active' : 'Vacated'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <button onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
-                        className="text-gray-400 hover:text-gray-700">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
+          {loading ? (
+            <TableSkeleton cols={7} hasAvatar />
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+              <table className="w-full min-w-175 text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    {['NAME', 'PHONE NUMBER', 'ROOM', 'COT', 'MOVE-IN DATE', 'STATUS', ''].map((h, i) => (
+                      <th key={i} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                    ))}
                   </tr>
-                ))
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={7} className="text-center py-10 text-gray-400">No tenants found.</td></tr>
+                  ) : filtered.map((t) => (
+                    <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
+                            {initials(t.name)}
+                          </div>
+                          <span className="font-medium">{t.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-gray-500">{t.phone}</td>
+                      <td className="px-5 py-4">{roomMap[t.room_id] ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-500">{t.cot_number ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-500">
+                        {new Date(t.move_in_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={t.status === 'active'
+                          ? 'bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full'
+                          : 'bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full'}>
+                          {t.status === 'active' ? 'Active' : 'Vacated'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <button onClick={() => router.push(`/dashboard/tenants/${t.id}`)} className="text-gray-400 hover:text-gray-700">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filtered.length > 0 && (
+                <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+                  Showing {filtered.length} of {tenants.length} tenants
+                </div>
               )}
-            </tbody>
-          </table>
-          {filtered.length > 0 && (
-            <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
-              Showing {filtered.length} of {tenants.length} tenants
             </div>
           )}
-        </div>
+        </>
       )}
+
+      {/* ── Collect Rent tab ── */}
+      {tab === 'collect' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg">
+              <button onClick={() => setCollectFilter('pending')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'pending' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>
+                Pending {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
+              </button>
+              <button onClick={() => setCollectFilter('all')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'all' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>
+                All
+              </button>
+            </div>
+            <button onClick={loadCollect} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-3 py-1.5 rounded-lg">
+              <RefreshCw className="w-3.5 h-3.5" />Refresh
+            </button>
+          </div>
+
+          {collectLoading ? (
+            <TableSkeleton cols={5} />
+          ) : visibleCollect.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 text-sm">
+              {collectFilter === 'pending' ? 'All rent collected this month!' : 'No records for this month.'}
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+              <table className="w-full min-w-150 text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    {['TENANT', 'ROOM', 'AMOUNT', 'DUE DATE', 'STATUS', 'ACTION'].map((h) => (
+                      <th key={h} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleCollect.map((r) => (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
+                            {initials(r.tenant_name)}
+                          </div>
+                          <div>
+                            <p className="font-medium">{r.tenant_name}</p>
+                            <p className="text-xs text-gray-400">{r.phone}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-gray-500">{r.room_number}</td>
+                      <td className="px-5 py-4 font-medium">{fmt(r.amount)}</td>
+                      <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
+                        {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-5 py-4">
+                        {r.status === 'paid' ? (
+                          <span className="bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">Paid</span>
+                        ) : (
+                          <span className="bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1 rounded-full">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        {r.status === 'pending' && (
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setPayDialog({ id: r.id, name: r.tenant_name }); setPayMode('cash') }}
+                              className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-medium">
+                              <CheckCircle className="w-3.5 h-3.5" />Mark Paid
+                            </button>
+                            <button onClick={() => sendWhatsApp(r)}
+                              className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
+                              <MessageCircle className="w-3.5 h-3.5 text-white" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+                {collectRecords.filter((r) => r.status === 'paid').length} of {collectRecords.length} collected this month
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Mark Paid dialog */}
+      <Dialog open={!!payDialog} onOpenChange={(v) => { if (!v) setPayDialog(null) }}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Mark as Paid</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <p className="text-sm text-gray-500">Recording payment for <span className="font-medium text-black">{payDialog?.name}</span></p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Payment Mode</label>
+              <select value={payMode} onChange={(e) => setPayMode(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="bank">Bank Transfer</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setPayDialog(null)}
+                className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleMarkPaid} disabled={marking}
+                className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
+                {marking ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

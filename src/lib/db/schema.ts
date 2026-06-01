@@ -1,15 +1,19 @@
 import { pgTable, uuid, text, integer, date, timestamp, boolean } from 'drizzle-orm/pg-core'
 
 export const organisations = pgTable('organisations', {
-  id:         uuid('id').defaultRandom().primaryKey(),
-  name:       text('name').notNull(),
-  owner_name: text('owner_name'),
-  phone:      text('phone'),
-  address:    text('address'),
-  logo_url:   text('logo_url'),
-  dark_mode:  boolean('dark_mode').notNull().default(false),
-  plan:       text('plan').notNull().default('starter'),
-  created_at: timestamp('created_at').defaultNow(),
+  id:                     uuid('id').defaultRandom().primaryKey(),
+  name:                   text('name').notNull(),
+  owner_name:             text('owner_name'),
+  phone:                  text('phone'),
+  address:                text('address'),
+  logo_url:               text('logo_url'),
+  dark_mode:              boolean('dark_mode').notNull().default(false),
+  plan:                   text('plan').notNull().default('starter'),
+  google_access_token:    text('google_access_token'),
+  google_refresh_token:   text('google_refresh_token'),
+  google_token_expiry:    timestamp('google_token_expiry'),
+  google_drive_folder_id: text('google_drive_folder_id'),
+  created_at:             timestamp('created_at').defaultNow(),
 })
 
 export const users = pgTable('users', {
@@ -58,6 +62,11 @@ export const rent_records = pgTable('rent_records', {
   payment_mode: text('payment_mode'),
   status:       text('status').notNull().default('pending'),
   created_at:   timestamp('created_at').defaultNow(),
+})
+
+export const platform_config = pgTable('platform_config', {
+  key:   text('key').primaryKey(),
+  value: text('value').notNull(),
 })
 
 export const documents = pgTable('documents', {

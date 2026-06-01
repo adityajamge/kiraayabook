@@ -8,6 +8,7 @@ const sql = neon(process.env.DATABASE_URL!)
 async function main() {
   console.log('Dropping all tables...')
 
+  await sql`DROP TABLE IF EXISTS platform_config CASCADE`
   await sql`DROP TABLE IF EXISTS documents    CASCADE`
   await sql`DROP TABLE IF EXISTS rent_records CASCADE`
   await sql`DROP TABLE IF EXISTS tenants      CASCADE`
@@ -19,15 +20,19 @@ async function main() {
 
   await sql`
     CREATE TABLE organisations (
-      id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name       TEXT NOT NULL,
-      owner_name TEXT,
-      phone      TEXT,
-      address    TEXT,
-      logo_url   TEXT,
-      dark_mode  BOOLEAN NOT NULL DEFAULT false,
-      plan       TEXT NOT NULL DEFAULT 'starter',
-      created_at TIMESTAMP DEFAULT now()
+      id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name                   TEXT NOT NULL,
+      owner_name             TEXT,
+      phone                  TEXT,
+      address                TEXT,
+      logo_url               TEXT,
+      dark_mode              BOOLEAN NOT NULL DEFAULT false,
+      plan                   TEXT NOT NULL DEFAULT 'starter',
+      google_access_token    TEXT,
+      google_refresh_token   TEXT,
+      google_token_expiry    TIMESTAMP,
+      google_drive_folder_id TEXT,
+      created_at             TIMESTAMP DEFAULT now()
     )
   `
 
@@ -95,6 +100,15 @@ async function main() {
       doc_type    TEXT NOT NULL,
       file_url    TEXT NOT NULL,
       uploaded_at TIMESTAMP DEFAULT now()
+    )
+  `
+
+  await sql`DROP TABLE IF EXISTS platform_config CASCADE`
+
+  await sql`
+    CREATE TABLE platform_config (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
     )
   `
 

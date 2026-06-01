@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/sidebar'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { BottomNav } from '@/components/bottom-nav'
 import { DarkModeInit } from '@/components/dark-mode-init'
+import { Toaster } from '@/components/ui/sonner'
 import { verifyJwt } from '@/lib/auth'
 import type { Metadata } from 'next'
 
@@ -58,6 +59,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
       <BottomNav />
+      <Toaster />
     </div>
   )
 }

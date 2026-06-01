@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Eye, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import {
   Dialog,
@@ -64,14 +65,30 @@ export default function TenantsPage() {
   })
 
   const handleSave = async () => {
-    if (!form.name || !form.phone || !form.room_id || !form.move_in_date) return
+    if (!form.name || !form.phone || !form.room_id || !form.move_in_date) {
+      toast.error('Please fill all required fields.')
+      return
+    }
+    if (!/^\d{10}$/.test(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits.')
+      return
+    }
+    if (tenants.some((t) => t.phone === form.phone)) {
+      toast.error('A tenant with this phone number already exists.')
+      return
+    }
     setSaving(true)
-    await fetch('/api/tenants', {
+    const res = await fetch('/api/tenants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, email: form.email || undefined, cot_number: form.cot_number || undefined, rent_amount: form.rent_amount || undefined }),
     })
     setSaving(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to add tenant.')
+      return
+    }
     setOpen(false)
     setForm(emptyForm)
     load()

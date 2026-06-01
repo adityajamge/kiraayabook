@@ -32,23 +32,29 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function nextDueDate(moveInDate: string): string {
-  const day = new Date(moveInDate).getDate()
+  // Parse date parts directly to avoid UTC-vs-local shift
+  const [y, m, d] = moveInDate.split('-').map(Number)
+  const day = d
   const today = new Date()
   let due = new Date(today.getFullYear(), today.getMonth(), day)
   if (due <= today) {
     due = new Date(today.getFullYear(), today.getMonth() + 1, day)
   }
-  return due.toISOString().split('T')[0]
+  return localDateStr(due)
 }
 
 function periodFromDue(dueDate: string): { period_start: string; period_end: string } {
-  const due = new Date(dueDate)
-  const start = new Date(due.getFullYear(), due.getMonth() - 1, due.getDate())
-  const end = new Date(due.getFullYear(), due.getMonth(), due.getDate() - 1)
+  const [y, m, d] = dueDate.split('-').map(Number)
+  const start = new Date(y, m - 2, d) // one month before due
+  const end = new Date(y, m - 1, d - 1) // day before due
   return {
-    period_start: start.toISOString().split('T')[0],
-    period_end: end.toISOString().split('T')[0],
+    period_start: localDateStr(start),
+    period_end: localDateStr(end),
   }
 }
 

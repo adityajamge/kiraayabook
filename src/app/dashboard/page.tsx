@@ -194,7 +194,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">Room {r.room_number}</p>
-                    {r.floor && <p className="text-xs text-gray-400">{r.floor}</p>}
+                    {r.floor && <p className="text-xs text-gray-400">Floor {r.floor}</p>}
                   </div>
                   <span className="text-sm font-semibold text-green-600 shrink-0">
                     {r.vacant} {r.vacant === 1 ? 'spot' : 'spots'} free

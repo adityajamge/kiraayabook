@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { tenants } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
@@ -23,6 +23,19 @@ export async function POST(request: Request) {
 
   if (!room_id || !name || !phone || !move_in_date) {
     return Response.json({ error: 'room_id, name, phone, and move_in_date are required' }, { status: 400 })
+  }
+
+  if (!/^\d{10}$/.test(phone)) {
+    return Response.json({ error: 'Phone number must be exactly 10 digits.' }, { status: 400 })
+  }
+
+  const [existing] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(and(eq(tenants.org_id, org_id), eq(tenants.phone, phone)))
+
+  if (existing) {
+    return Response.json({ error: 'A tenant with this phone number already exists.' }, { status: 409 })
   }
 
   const [tenant] = await db

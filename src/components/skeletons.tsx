@@ -1,5 +1,5 @@
 function Sk({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+  return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md ${className}`} />
 }
 
 export function DashboardSkeleton() {
@@ -12,7 +12,7 @@ export function DashboardSkeleton() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
+          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <Sk className="h-4 w-24" />
               <Sk className="w-8 h-8 rounded-lg" />
@@ -25,7 +25,7 @@ export function DashboardSkeleton() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-xl p-5">
+          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <Sk className="h-5 w-28 mb-1.5" />
@@ -65,10 +65,10 @@ export function TableSkeleton({
   hasAvatar?: boolean
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
       <table className="w-full min-w-120">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-gray-100 dark:border-gray-700">
             {[...Array(cols)].map((_, i) => (
               <th key={i} className="px-5 py-3.5 text-left">
                 <Sk className={`h-3 ${COL_WIDTHS[i % COL_WIDTHS.length]}`} />
@@ -78,7 +78,7 @@ export function TableSkeleton({
         </thead>
         <tbody>
           {[...Array(rows)].map((_, row) => (
-            <tr key={row} className="border-b border-gray-50">
+            <tr key={row} className="border-b border-gray-50 dark:border-gray-800/60">
               {[...Array(cols)].map((_, col) => (
                 <td key={col} className="px-5 py-4">
                   {hasAvatar && col === 0 ? (
@@ -87,15 +87,7 @@ export function TableSkeleton({
                       <Sk className={`h-4 ${row % 2 === 0 ? 'w-28' : 'w-24'}`} />
                     </div>
                   ) : (
-                    <Sk
-                      className={`h-4 ${
-                        col === cols - 1
-                          ? 'w-12'
-                          : row % 3 === 0
-                          ? COL_WIDTHS[(col + 1) % COL_WIDTHS.length]
-                          : COL_WIDTHS[col % COL_WIDTHS.length]
-                      }`}
-                    />
+                    <Sk className={`h-4 ${col === cols - 1 ? 'w-12' : row % 3 === 0 ? COL_WIDTHS[(col + 1) % COL_WIDTHS.length] : COL_WIDTHS[col % COL_WIDTHS.length]}`} />
                   )}
                 </td>
               ))}

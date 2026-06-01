@@ -172,7 +172,7 @@ export default function SettingsPage() {
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
               <Moon className="w-4 h-4 text-gray-500 dark:text-gray-300" />
             </div>
             <div>
@@ -229,7 +229,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={logoUploading}
-                className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-4 h-4" />
                 {logoUploading ? 'Uploading…' : 'Upload Logo'}

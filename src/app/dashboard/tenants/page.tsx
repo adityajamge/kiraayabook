@@ -28,6 +28,8 @@ interface CollectRecord {
   room_number: string
   rent_amount: number | null
   amount: number
+  period_start: string
+  period_end: string
   due_date: string
   paid_date: string | null
   payment_mode: string | null
@@ -39,6 +41,7 @@ function initials(name: string) {
 }
 
 function fmt(n: number) { return `₹${n.toLocaleString('en-IN')}` }
+function fmtDate(d: string) { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }
 
 const emptyForm = { name: '', phone: '', email: '', room_id: '', cot_number: '', move_in_date: '', move_out_date: '', rent_amount: '' }
 
@@ -178,24 +181,24 @@ export default function TenantsPage() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
                     <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
                     <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit number"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Email</label>
                   <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Optional"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
                     <select value={form.room_id} onChange={(e) => set('room_id', e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                       <option value="">Select room</option>
                       {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
                     </select>
@@ -203,29 +206,29 @@ export default function TenantsPage() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Cot</label>
                     <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
                   <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
                     <input type="date" value={form.move_in_date} onChange={(e) => set('move_in_date', e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Move-out Date</label>
                     <input type="date" value={form.move_out_date} onChange={(e) => set('move_out_date', e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                   </div>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => setOpen(false)}
-                    className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                    className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
                   <button onClick={handleSave} disabled={saving}
                     className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                     {saving ? 'Saving...' : 'Save'}
@@ -240,11 +243,11 @@ export default function TenantsPage() {
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-5">
         <button onClick={() => setTab('tenants')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-700'}`}>
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 hover:text-gray-700'}`}>
           All Tenants
         </button>
         <button onClick={() => setTab('collect')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${tab === 'collect' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-700'}`}>
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${tab === 'collect' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 hover:text-gray-700'}`}>
           Collect Rent
           {pendingCount > 0 && tab !== 'collect' && (
             <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">{pendingCount}</span>
@@ -262,12 +265,12 @@ export default function TenantsPage() {
                 className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
             </div>
             <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
               <option value="">Room</option>
               {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
             </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
               <option value="">Status</option>
               <option value="active">Active</option>
               <option value="vacated">Vacated</option>
@@ -277,12 +280,12 @@ export default function TenantsPage() {
           {loading ? (
             <TableSkeleton cols={7} hasAvatar />
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
               <table className="w-full min-w-175 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-gray-100 dark:border-gray-700">
                     {['NAME', 'PHONE NUMBER', 'ROOM', 'COT', 'MOVE-IN DATE', 'STATUS', ''].map((h, i) => (
-                      <th key={i} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                      <th key={i} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -290,10 +293,10 @@ export default function TenantsPage() {
                   {filtered.length === 0 ? (
                     <tr><td colSpan={7} className="text-center py-10 text-gray-400">No tenants found.</td></tr>
                   ) : filtered.map((t) => (
-                    <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <tr key={t.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
+                          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
                             {initials(t.name)}
                           </div>
                           <span className="font-medium">{t.name}</span>
@@ -322,7 +325,7 @@ export default function TenantsPage() {
                 </tbody>
               </table>
               {filtered.length > 0 && (
-                <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
                   Showing {filtered.length} of {tenants.length} tenants
                 </div>
               )}
@@ -335,13 +338,13 @@ export default function TenantsPage() {
       {tab === 'collect' && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg">
+            <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
               <button onClick={() => setCollectFilter('pending')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'pending' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'pending' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500'}`}>
                 Pending {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
               </button>
               <button onClick={() => setCollectFilter('all')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'all' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${collectFilter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500'}`}>
                 All
               </button>
             </div>
@@ -357,21 +360,21 @@ export default function TenantsPage() {
               {collectFilter === 'pending' ? 'All rent collected this month!' : 'No records for this month.'}
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
               <table className="w-full min-w-150 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    {['TENANT', 'ROOM', 'AMOUNT', 'DUE DATE', 'STATUS', 'ACTION'].map((h) => (
-                      <th key={h} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                  <tr className="border-b border-gray-100 dark:border-gray-700">
+                    {['TENANT', 'ROOM', 'PERIOD', 'AMOUNT', 'DUE DATE', 'STATUS', 'ACTION'].map((h) => (
+                      <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {visibleCollect.map((r) => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <tr key={r.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
+                          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
                             {initials(r.tenant_name)}
                           </div>
                           <div>
@@ -381,6 +384,7 @@ export default function TenantsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-4 text-gray-500">{r.room_number}</td>
+                      <td className="px-5 py-4 text-gray-500 whitespace-nowrap">{fmtDate(r.period_start)} – {fmtDate(r.period_end)}</td>
                       <td className="px-5 py-4 font-medium">{fmt(r.amount)}</td>
                       <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
                         {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -410,7 +414,7 @@ export default function TenantsPage() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
+              <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
                 {collectRecords.filter((r) => r.status === 'paid').length} of {collectRecords.length} collected this month
               </div>
             </div>
@@ -429,7 +433,7 @@ export default function TenantsPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Payment Mode</label>
               <select value={payMode} onChange={(e) => setPayMode(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                 <option value="cash">Cash</option>
                 <option value="upi">UPI</option>
                 <option value="bank">Bank Transfer</option>
@@ -437,7 +441,7 @@ export default function TenantsPage() {
             </div>
             <div className="flex gap-2 pt-1">
               <button onClick={() => setPayDialog(null)}
-                className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
               <button onClick={handleMarkPaid} disabled={marking}
                 className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                 {marking ? 'Saving...' : 'Confirm'}

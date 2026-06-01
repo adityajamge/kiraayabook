@@ -7,16 +7,16 @@ function localDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Due date for current cycle = joining_day of current month
+// Due date = joining_day of current month. Period starts on due date, ends the day before next month's due date.
+// e.g. joined Jan 5, paying on Jun 5 → period = Jun 5 – Jul 4
 function currentCycleDates(moveInDate: string): { due_date: string; period_start: string; period_end: string } {
   const day = parseInt(moveInDate.split('-')[2])
   const now = new Date()
   const due = new Date(now.getFullYear(), now.getMonth(), day)
-  const start = new Date(now.getFullYear(), now.getMonth() - 1, day)
-  const end = new Date(now.getFullYear(), now.getMonth(), day - 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, day - 1)
   return {
     due_date:     localDateStr(due),
-    period_start: localDateStr(start),
+    period_start: localDateStr(due),  // period starts on the due date itself
     period_end:   localDateStr(end),
   }
 }

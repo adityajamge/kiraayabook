@@ -74,7 +74,7 @@ export default function RoomsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold">Rooms</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Manage all rooms and their capacity</p>
+          <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm mt-0.5">Manage all rooms and their capacity</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm) } }}>
           <DialogTrigger asChild>
@@ -101,7 +101,7 @@ export default function RoomsPage() {
                   value={form.room_number}
                   onChange={(e) => set('room_number', e.target.value)}
                   placeholder="e.g. 101 or G-3"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
                 />
               </div>
               <div>
@@ -114,7 +114,7 @@ export default function RoomsPage() {
                   value={form.capacity}
                   onChange={(e) => set('capacity', e.target.value)}
                   placeholder="e.g. 4"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
                 />
               </div>
               <div>
@@ -123,7 +123,7 @@ export default function RoomsPage() {
                   value={form.floor}
                   onChange={(e) => set('floor', e.target.value)}
                   placeholder="e.g. Ground, 1st Floor"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
                 />
               </div>
               <div>
@@ -131,7 +131,7 @@ export default function RoomsPage() {
                 <select
                   value={form.type}
                   onChange={(e) => set('type', e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white bg-white"
                 >
                   <option value="">Select type</option>
                   <option value="AC">AC</option>
@@ -142,7 +142,7 @@ export default function RoomsPage() {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -162,14 +162,14 @@ export default function RoomsPage() {
       {loading ? (
         <TableSkeleton cols={7} />
       ) : rooms.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-sm">No rooms yet. Add your first room.</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">No rooms yet. Add your first room.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-100 dark:border-gray-700">
                 {['ROOM NUMBER', 'FLOOR', 'TYPE', 'CAPACITY', 'OCCUPIED', 'VACANT', 'ACTIONS'].map((h) => (
-                  <th key={h} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">
+                  <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">
                     {h}
                   </th>
                 ))}
@@ -177,7 +177,7 @@ export default function RoomsPage() {
             </thead>
             <tbody>
               {rooms.map((room) => (
-                <tr key={room.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr key={room.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <td className="px-5 py-4 font-medium">{room.room_number}</td>
                   <td className="px-5 py-4 text-gray-500">{room.floor ?? '—'}</td>
                   <td className="px-5 py-4 text-gray-500">{room.type ?? '—'}</td>

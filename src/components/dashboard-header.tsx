@@ -13,17 +13,17 @@ export function DashboardHeader({ orgName }: { orgName: string }) {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0">
+    <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-6 shrink-0">
       <div className="flex items-center gap-2 text-sm min-w-0">
-        <div className="flex items-center gap-1 text-gray-500 truncate">
+        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 truncate">
           <MapPin className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate font-semibold text-gray-900">{orgName}</span>
+          <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
         </div>
       </div>
 
       <button
         onClick={handleLogout}
-        className="flex items-center gap-1.5 text-sm font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors shrink-0"
+        className="flex items-center gap-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0"
       >
         <LogOut className="w-4 h-4" />
         <span className="hidden sm:inline">Logout</span>

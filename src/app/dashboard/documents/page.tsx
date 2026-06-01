@@ -73,7 +73,7 @@ export default function DocumentsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Tenant <span className="text-red-500">*</span></label>
                 <select value={selTenant} onChange={(e) => setSelTenant(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                   <option value="">Select tenant</option>
                   {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
@@ -81,7 +81,7 @@ export default function DocumentsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Document Type</label>
                 <select value={docType} onChange={(e) => setDocType(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                   <option value="aadhaar">Aadhaar</option>
                   <option value="pan">PAN</option>
                   <option value="photo">Photo</option>
@@ -90,7 +90,7 @@ export default function DocumentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">File <span className="text-red-500">*</span></label>
-                <label className="flex items-center gap-3 w-full border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                <label className="flex items-center gap-3 w-full border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <span className="shrink-0 bg-black text-white text-xs font-medium px-3 py-1 rounded-md">Choose File</span>
                   <span className="text-sm text-gray-500 truncate">{file ? file.name : 'No file chosen'}</span>
                   <input type="file" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
@@ -98,7 +98,7 @@ export default function DocumentsPage() {
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setOpen(false)}
-                  className="flex-1 border border-gray-200 text-sm font-medium py-2 rounded-lg hover:bg-gray-50">Cancel</button>
+                  className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
                 <button onClick={handleUpload} disabled={!file || !selTenant || uploading}
                   className="flex-1 bg-black text-white text-sm font-medium py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                   {uploading ? 'Uploading...' : 'Upload'}
@@ -117,7 +117,7 @@ export default function DocumentsPage() {
             className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
         </div>
         <select value={tenantFilter} onChange={(e) => setTenantFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+          className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
           <option value="">All Tenants</option>
           {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
@@ -128,18 +128,18 @@ export default function DocumentsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No documents found.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
           <table className="w-full min-w-120 text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-100 dark:border-gray-700">
                 {['TENANT', 'DOCUMENT TYPE', 'UPLOADED ON', 'VIEW'].map((h) => (
-                  <th key={h} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                  <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((d) => (
-                <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={d.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-5 py-4 font-medium">{tenantMap[d.tenant_id] ?? '—'}</td>
                   <td className="px-5 py-4 capitalize text-gray-600">{d.doc_type}</td>
                   <td className="px-5 py-4 text-gray-500">

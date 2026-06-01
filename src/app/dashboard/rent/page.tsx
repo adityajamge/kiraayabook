@@ -60,17 +60,17 @@ export default function RentPage() {
           <p className="text-gray-500 text-sm mt-0.5">Transaction history. Collect rent from the Tenants page.</p>
         </div>
         <input type="month" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+          className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
       </div>
 
       {/* Summary */}
       {!loading && records.length > 0 && (
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="bg-white border border-gray-200 rounded-xl px-5 py-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-5 py-4">
             <p className="text-xs text-gray-400 mb-1">Collected</p>
             <p className="text-xl font-bold text-green-600">{fmt(paid)}</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl px-5 py-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-5 py-4">
             <p className="text-xs text-gray-400 mb-1">Pending</p>
             <p className="text-xl font-bold text-red-500">{fmt(pending)}</p>
           </div>
@@ -82,12 +82,12 @@ export default function RentPage() {
       ) : records.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No records for this month.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
           <table className="w-full min-w-180 text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-100 dark:border-gray-700">
                 {['TENANT', 'ROOM', 'PERIOD', 'AMOUNT', 'DUE DATE', 'PAID DATE', 'MODE', 'STATUS'].map((h) => (
-                  <th key={h} className="text-left text-xs font-medium text-gray-400 px-5 py-3.5 tracking-wide">{h}</th>
+                  <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -95,7 +95,7 @@ export default function RentPage() {
               {records.map((r) => {
                 const t = tenantMap[r.tenant_id]
                 return (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={r.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-5 py-4 font-medium">{t?.name ?? '—'}</td>
                     <td className="px-5 py-4 text-gray-500">{t ? roomMap[t.room_id] ?? '—' : '—'}</td>
                     <td className="px-5 py-4 text-gray-500 whitespace-nowrap">{fmtDate(r.period_start)} – {fmtDate(r.period_end)}</td>

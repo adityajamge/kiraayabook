@@ -42,21 +42,5 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     background_color: '#ffffff',
     theme_color:      '#000000',
     icons,
-    screenshots: [
-      {
-        src:          '/screenshot-wide.png',
-        sizes:        '1280x720',
-        type:         'image/png',
-        // @ts-expect-error — form_factor not yet in Next.js types
-        form_factor:  'wide',
-        label:        `${name} dashboard`,
-      },
-      {
-        src:   '/screenshot-mobile.png',
-        sizes: '390x844',
-        type:  'image/png',
-        label: `${name} on mobile`,
-      },
-    ],
   }
 }

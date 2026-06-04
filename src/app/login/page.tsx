@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { LayoutGrid, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Home, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -9,21 +10,30 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [orgName, setOrgName] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/org')
+      .then((r) => r.json())
+      .then((d) => {
+        setOrgName(d.name ?? null)
+        setLogoUrl(d.logo_url ?? null)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     })
-
     if (res.ok) {
       window.location.href = '/dashboard'
-      return
     } else {
       setError('Incorrect email or password.')
       setLoading(false)
@@ -31,58 +41,68 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-sm">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <LayoutGrid className="w-4 h-4 text-white" />
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-20 h-20 bg-black rounded-[22px] flex items-center justify-center overflow-hidden mb-4 shadow-lg">
+            {logoUrl ? (
+              <Image src={logoUrl} alt="logo" width={80} height={80} className="w-full h-full object-cover" />
+            ) : (
+              <Home className="w-9 h-9 text-white" />
+            )}
           </div>
-          <span className="font-bold text-lg">KiraayaBook</span>
+          {orgName && (
+            <p className="text-lg font-bold text-gray-900">{orgName}</p>
+          )}
         </div>
 
-        <h1 className="text-xl font-bold text-center mb-1">Sign in to your dashboard</h1>
-        <p className="text-gray-500 text-sm text-center mb-6">
+        {/* Heading */}
+        <h1 className="text-2xl font-bold text-center mb-1.5">Sign in to your dashboard</h1>
+        <p className="text-gray-500 text-sm text-center mb-8">
           Manage your PG — tenants, rooms and rent.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Email</label>
+            <label className="block text-sm font-semibold mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors"
+              className="w-full bg-gray-100 rounded-xl px-4 py-3.5 text-sm outline-none focus:bg-gray-50 transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Password</label>
+            <label className="block text-sm font-semibold mb-2">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-10 text-sm outline-none focus:border-gray-400 transition-colors"
+                className="w-full bg-gray-100 rounded-xl px-4 py-3.5 pr-12 text-sm outline-none focus:bg-gray-50 transition-colors"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
+            </div>
+            <div className="flex justify-end mt-2">
+              <span className="text-sm text-gray-400">Forgot password?</span>
             </div>
           </div>
 
           {error && (
             <div className="flex items-center gap-1.5 text-red-500 text-sm">
-              <AlertCircle className="w-4 h-4" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
@@ -90,7 +110,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white font-medium py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="w-full bg-black text-white font-semibold py-4 rounded-2xl hover:bg-gray-800 disabled:opacity-50 transition-colors mt-2"
           >
             {loading ? 'Signing in...' : 'Login'}
           </button>

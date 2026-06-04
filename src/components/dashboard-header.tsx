@@ -13,7 +13,7 @@ export function DashboardHeader({ orgName }: { orgName: string }) {
   }
 
   return (
-    <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-6 shrink-0">
+    <header className="hidden lg:flex h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 items-center justify-between px-4 lg:px-6 shrink-0">
       <div className="flex items-center gap-2 text-sm min-w-0">
         <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 truncate">
           <MapPin className="w-3.5 h-3.5 shrink-0" />

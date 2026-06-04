@@ -3,6 +3,8 @@ import { pgTable, uuid, text, integer, date, timestamp, boolean } from 'drizzle-
 export const organisations = pgTable('organisations', {
   id:                     uuid('id').defaultRandom().primaryKey(),
   name:                   text('name').notNull(),
+  domain:                 text('domain').notNull().unique(),
+  short_name:             text('short_name'),
   owner_name:             text('owner_name'),
   phone:                  text('phone'),
   address:                text('address'),

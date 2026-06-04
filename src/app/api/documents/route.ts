@@ -1,14 +1,71 @@
 import { db } from '@/lib/db'
-import { documents } from '@/lib/db/schema'
+import { documents, organisations, platform_config } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
-import { v2 as cloudinary } from 'cloudinary'
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+async function refreshAccessToken(orgId: string, refreshToken: string): Promise<string> {
+  const [clientIdRow, clientSecretRow] = await Promise.all([
+    db.select().from(platform_config).where(eq(platform_config.key, 'google_client_id')).then(r => r[0]),
+    db.select().from(platform_config).where(eq(platform_config.key, 'google_client_secret')).then(r => r[0]),
+  ])
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     clientIdRow.value,
+      client_secret: clientSecretRow.value,
+      refresh_token: refreshToken,
+      grant_type:    'refresh_token',
+    }),
+  })
+
+  const data = await res.json() as { access_token: string; expires_in: number; error?: string }
+  if (data.error) throw new Error(`Token refresh failed: ${data.error}`)
+
+  const expiry = new Date(Date.now() + data.expires_in * 1000)
+  await db.update(organisations)
+    .set({ google_access_token: data.access_token, google_token_expiry: expiry })
+    .where(eq(organisations.id, orgId))
+
+  return data.access_token
+}
+
+async function uploadToDrive(accessToken: string, folderId: string, file: File): Promise<string> {
+  const bytes = await file.arrayBuffer()
+  const boundary = '-------KiraayaBook314159265358979'
+  const metadata = JSON.stringify({ name: file.name || 'document', parents: [folderId] })
+
+  const enc = new TextEncoder()
+  const parts: Uint8Array[] = [
+    enc.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+    enc.encode(`--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`),
+    new Uint8Array(bytes),
+    enc.encode(`\r\n--${boundary}--`),
+  ]
+
+  const totalLength = parts.reduce((sum, p) => sum + p.length, 0)
+  const body = new Uint8Array(totalLength)
+  let offset = 0
+  for (const part of parts) { body.set(part, offset); offset += part.length }
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: {
+        Authorization:  `Bearer ${accessToken}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body: body.buffer as ArrayBuffer,
+    }
+  )
+
+  const data = await res.json() as { id: string; error?: { message: string } }
+  if (data.error) throw new Error(`Drive upload failed: ${data.error.message}`)
+
+  return `https://drive.google.com/file/d/${data.id}/view`
+}
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
@@ -25,30 +82,40 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const org_id = await getOrgId(request)
-  const formData = await request.formData()
 
-  const file = formData.get('file') as File | null
+  const [org] = await db
+    .select({
+      id:                     organisations.id,
+      google_access_token:    organisations.google_access_token,
+      google_refresh_token:   organisations.google_refresh_token,
+      google_token_expiry:    organisations.google_token_expiry,
+      google_drive_folder_id: organisations.google_drive_folder_id,
+    })
+    .from(organisations)
+    .where(eq(organisations.id, org_id))
+
+  if (!org.google_drive_folder_id || !org.google_refresh_token) {
+    return Response.json(
+      { error: 'Google Drive is not connected. Run pnpm add:drive to set it up.' },
+      { status: 503 }
+    )
+  }
+
+  const formData = await request.formData()
+  const file      = formData.get('file')      as File   | null
   const tenant_id = formData.get('tenant_id') as string | null
-  const doc_type = formData.get('doc_type') as string | null
+  const doc_type  = formData.get('doc_type')  as string | null
 
   if (!file || !tenant_id || !doc_type) {
     return Response.json({ error: 'file, tenant_id, and doc_type are required' }, { status: 400 })
   }
 
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
+  const needsRefresh = !org.google_token_expiry || org.google_token_expiry <= new Date()
+  const accessToken  = needsRefresh
+    ? await refreshAccessToken(org.id, org.google_refresh_token)
+    : org.google_access_token!
 
-  const file_url = await new Promise<string>((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        { folder: `kiraayabook/${org_id}`, resource_type: 'auto' },
-        (error, result) => {
-          if (error || !result) return reject(error)
-          resolve(result.secure_url)
-        }
-      )
-      .end(buffer)
-  })
+  const file_url = await uploadToDrive(accessToken, org.google_drive_folder_id, file)
 
   const [doc] = await db
     .insert(documents)

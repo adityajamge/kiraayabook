@@ -1,10 +1,9 @@
 const CACHE = 'kiraayabook-v1'
 const OFFLINE_URL = '/offline.html'
-const PRECACHE = ['/', '/dashboard', OFFLINE_URL]
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
+    caches.open(CACHE).then((cache) => cache.add(OFFLINE_URL))
   )
   self.skipWaiting()
 })
@@ -20,7 +19,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return
-  if (e.request.url.includes('/api/')) return // never cache API calls
+  if (e.request.url.includes('/api/')) return
 
   e.respondWith(
     fetch(e.request)

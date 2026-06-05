@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { X, Download, Share2, Loader2 } from 'lucide-react'
 
 export interface BillData {
@@ -198,7 +198,24 @@ function BillContent({ data }: { data: BillData }) {
 
 export function BillPreview({ data, onClose }: { data: BillData; onClose: () => void }) {
   const billRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
+  const [scale, setScale] = useState(1)
+  const [scaledH, setScaledH] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    const update = () => {
+      if (!wrapperRef.current || !billRef.current) return
+      const available = wrapperRef.current.offsetWidth
+      const s = Math.min(1, available / 880)
+      setScale(s)
+      setScaledH(Math.ceil(billRef.current.scrollHeight * s))
+    }
+    // small delay so DOM is laid out
+    const t = setTimeout(update, 50)
+    window.addEventListener('resize', update)
+    return () => { clearTimeout(t); window.removeEventListener('resize', update) }
+  }, [])
 
   const captureJpeg = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
     const el = billRef.current
@@ -291,12 +308,16 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
           </div>
         </div>
 
-        {/* Bill — captured by html2canvas */}
-        <div
-          ref={billRef}
-          style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}
-        >
-          <BillContent data={data} />
+        {/* Bill — scale wrapper fits mobile; billRef stays at true 880px for html2canvas */}
+        <div ref={wrapperRef} style={{ width: '100%', overflow: 'hidden', height: scaledH }}>
+          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 880 }}>
+            <div
+              ref={billRef}
+              style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}
+            >
+              <BillContent data={data} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

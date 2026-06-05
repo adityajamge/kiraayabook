@@ -23,10 +23,16 @@ export async function GET(request: Request) {
     return Response.json((rows as any)[0])
   }
 
+  const tenant_id = searchParams.get('tenant_id')
+
   const rows = await db
     .select()
     .from(rent_records)
-    .where(eq(rent_records.org_id, org_id))
+    .where(
+      tenant_id
+        ? sql`org_id = ${org_id} AND tenant_id = ${tenant_id}`
+        : eq(rent_records.org_id, org_id)
+    )
     .orderBy(rent_records.due_date)
 
   return Response.json(rows)

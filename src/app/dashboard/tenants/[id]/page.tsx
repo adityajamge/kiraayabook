@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, ExternalLink, Pencil } from 'lucide-react'
+import { ArrowLeft, Upload, ExternalLink, Pencil, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { BillPreview, type BillData } from '@/components/bill-preview'
 
 interface Tenant {
   id: string; name: string; phone: string; email: string | null
@@ -12,6 +13,16 @@ interface Tenant {
 }
 interface Document { id: string; doc_type: string; file_url: string; uploaded_at: string }
 interface Room { id: string; room_number: string }
+interface RentRecord {
+  id: string; tenant_id: string; amount: number
+  period_start: string; period_end: string
+  due_date: string; paid_date: string | null
+  payment_mode: string | null; status: string; bill_no: number
+}
+interface OrgSettings {
+  name: string; address: string | null; phone: string | null
+  logo_url: string | null; bill_notes: string | null
+}
 
 type EditForm = {
   name: string; phone: string; email: string; room_id: string
@@ -48,20 +59,48 @@ export default function TenantDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editForm, setEditForm] = useState<EditForm | null>(null)
   const [saving, setSaving] = useState(false)
+  const [rentRecords, setRentRecords] = useState<RentRecord[]>([])
+  const [org, setOrg] = useState<OrgSettings | null>(null)
+  const [billRecord, setBillRecord] = useState<RentRecord | null>(null)
 
   useEffect(() => { load() }, [id])
 
   const load = async () => {
-    const [tr, dr, rr] = await Promise.all([
+    const [tr, dr, rr, rentr, sr] = await Promise.all([
       fetch(`/api/tenants/${id}`),
       fetch(`/api/documents?tenant_id=${id}`),
       fetch('/api/rooms'),
+      fetch(`/api/rent?tenant_id=${id}`),
+      fetch('/api/settings'),
     ])
     const tenantData: Tenant = await tr.json()
     setTenant(tenantData)
     setEditForm(tenantToForm(tenantData))
     setDocs(await dr.json())
     setRooms(await rr.json())
+    setRentRecords(await rentr.json())
+    setOrg(await sr.json())
+  }
+
+  const buildBillData = (r: RentRecord): BillData | null => {
+    if (!tenant || !org) return null
+    return {
+      pgName:      org.name,
+      address:     org.address,
+      phone:       org.phone,
+      logoUrl:     org.logo_url,
+      billNotes:   org.bill_notes,
+      billNo:      String(r.bill_no),
+      date:        r.paid_date ?? new Date().toISOString().slice(0, 10),
+      tenantName:  tenant.name,
+      roomNumber:  roomMap[tenant.room_id] ?? '—',
+      joiningDate: tenant.move_in_date,
+      periodFrom:  r.period_start,
+      periodTo:    r.period_end,
+      amount:      r.amount,
+      paymentMode: r.payment_mode,
+      status:      r.status,
+    }
   }
 
   const roomMap = Object.fromEntries(rooms.map((r: Room) => [r.id, r.room_number]))
@@ -243,6 +282,9 @@ export default function TenantDetailPage() {
         </div>
       </div>
 
+      {/* Bill preview */}
+      {billRecord && (() => { const bd = buildBillData(billRecord); return bd ? <BillPreview data={bd} onClose={() => setBillRecord(null)} /> : null })()}
+
       {/* Documents */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
@@ -303,6 +345,69 @@ export default function TenantDetailPage() {
                 </a>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Rent Records */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-6 mt-4">
+        <h2 className="font-semibold dark:text-white mb-4">Rent Records</h2>
+        {rentRecords.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">No rent records found.</p>
+        ) : (
+          <div className="space-y-3">
+            {rentRecords.map((r) => {
+              const overdue = r.status === 'pending' && new Date(r.due_date) < new Date()
+              return (
+                <div key={r.id} className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 sm:p-4">
+                  {/* Top row: period + status badge */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div>
+                      <p className="text-sm font-semibold dark:text-white">
+                        {new Date(r.period_start).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                        {' – '}
+                        {new Date(r.period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Due {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    {r.status === 'paid' ? (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full">
+                        <CheckCircle className="w-3 h-3" /> Paid
+                      </span>
+                    ) : overdue ? (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 px-2.5 py-1 rounded-full">
+                        <AlertTriangle className="w-3 h-3" /> Overdue
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400 px-2.5 py-1 rounded-full">
+                        <Clock className="w-3 h-3" /> Pending
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Amount + payment info */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-base font-bold dark:text-white">₹{r.amount.toLocaleString('en-IN')}</p>
+                      {r.paid_date && (
+                        <p className="text-xs text-gray-400">
+                          Paid on {new Date(r.paid_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {r.payment_mode ? ` · ${r.payment_mode}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setBillRecord(r)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Bill
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

@@ -79,3 +79,12 @@ export const documents = pgTable('documents', {
   file_url:    text('file_url').notNull(),
   uploaded_at: timestamp('uploaded_at').defaultNow(),
 })
+
+export const expenses = pgTable('expenses', {
+  id:          uuid('id').defaultRandom().primaryKey(),
+  org_id:      uuid('org_id').notNull().references(() => organisations.id),
+  description: text('description').notNull(),
+  amount:      integer('amount').notNull(),
+  date:        date('date').notNull(),
+  created_at:  timestamp('created_at').defaultNow(),
+})

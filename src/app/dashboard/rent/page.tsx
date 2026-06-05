@@ -47,11 +47,12 @@ export default function RentPage() {
   const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null)
   const [payMode, setPayMode] = useState('cash')
   const [marking, setMarking] = useState(false)
+  const [orgName, setOrgName] = useState('Your PG')
 
   useEffect(() => {
-    Promise.all([fetch('/api/tenants'), fetch('/api/rooms')])
-      .then(([tr, rr]) => Promise.all([tr.json(), rr.json()]))
-      .then(([t, r]) => { setTenants(t); setRooms(r) })
+    Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings')])
+      .then(([tr, rr, sr]) => Promise.all([tr.json(), rr.json(), sr.json()]))
+      .then(([t, r, s]) => { setTenants(t); setRooms(r); if (s?.name) setOrgName(s.name) })
   }, [])
 
   useEffect(() => { loadRecords() }, [monthFilter])
@@ -82,7 +83,7 @@ export default function RentPage() {
     const t = tenantMap[record.tenant_id]
     if (!t) return
     const dueStr = new Date(record.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    const msg = encodeURIComponent(`Hi ${t.name}, your rent of ${fmt(record.amount)} is due on ${dueStr}. Please pay at the earliest. - KiraayaBook`)
+    const msg = encodeURIComponent(`Hi ${t.name}, your rent of ${fmt(record.amount)} is due on ${dueStr}. Please pay at the earliest. - ${orgName}`)
     window.open(`https://wa.me/91${t.phone}?text=${msg}`, '_blank')
   }
 

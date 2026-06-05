@@ -66,14 +66,17 @@ export default function TenantsPage() {
   const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null)
   const [payMode, setPayMode] = useState('cash')
   const [marking, setMarking] = useState(false)
+  const [orgName, setOrgName] = useState('Your PG')
 
   useEffect(() => { loadAll() }, [])
 
   const loadAll = async () => {
-    const [tr, rr] = await Promise.all([fetch('/api/tenants'), fetch('/api/rooms')])
+    const [tr, rr, sr] = await Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings')])
     setTenants(await tr.json())
     const roomData = await rr.json()
     setRooms(roomData.map((r: Room) => ({ id: r.id, room_number: r.room_number })))
+    const settings = await sr.json()
+    if (settings?.name) setOrgName(settings.name)
     setLoading(false)
   }
 
@@ -145,7 +148,7 @@ export default function TenantsPage() {
 
   const sendWhatsApp = (r: CollectRecord) => {
     const dueStr = new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    const msg = encodeURIComponent(`Hi ${r.tenant_name}, your rent of ${fmt(r.amount)} is due on ${dueStr}. Please pay at the earliest. - KiraayaBook`)
+    const msg = encodeURIComponent(`Hi ${r.tenant_name}, your rent of ${fmt(r.amount)} is due on ${dueStr}. Please pay at the earliest. - ${orgName}`)
     window.open(`https://wa.me/91${r.phone}?text=${msg}`, '_blank')
   }
 

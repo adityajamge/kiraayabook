@@ -205,13 +205,12 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
 
   useEffect(() => {
     const update = () => {
-      if (!wrapperRef.current || !billRef.current) return
-      const available = wrapperRef.current.offsetWidth
+      if (!billRef.current) return
+      const available = window.innerWidth - 32 // 16px padding each side
       const s = Math.min(1, available / 880)
       setScale(s)
       setScaledH(Math.ceil(billRef.current.scrollHeight * s))
     }
-    // small delay so DOM is laid out
     const t = setTimeout(update, 50)
     window.addEventListener('resize', update)
     return () => { clearTimeout(t); window.removeEventListener('resize', update) }
@@ -278,7 +277,7 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 overflow-y-auto p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 overflow-y-auto px-4 py-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="mb-6">

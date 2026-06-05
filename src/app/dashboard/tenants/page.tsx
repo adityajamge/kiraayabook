@@ -103,12 +103,17 @@ export default function TenantsPage() {
     : collectRecords
 
   const handleSave = async () => {
-    if (!form.name || !form.phone || !form.room_id || !form.move_in_date) {
+    const trimmedName = form.name.trim()
+    if (!trimmedName || !form.phone || !form.room_id || !form.move_in_date) {
       toast.error('Please fill all required fields.')
       return
     }
     if (!/^\d{10}$/.test(form.phone)) {
       toast.error('Phone number must be exactly 10 digits.')
+      return
+    }
+    if (form.move_out_date && form.move_out_date <= form.move_in_date) {
+      toast.error('Move-out date must be after move-in date.')
       return
     }
     if (tenants.some((t) => t.phone === form.phone)) {
@@ -119,7 +124,7 @@ export default function TenantsPage() {
     const res = await fetch('/api/tenants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, email: form.email || undefined, cot_number: form.cot_number || undefined, rent_amount: form.rent_amount || undefined }),
+      body: JSON.stringify({ ...form, name: trimmedName, email: form.email.trim() || undefined, cot_number: form.cot_number || undefined, rent_amount: form.rent_amount || undefined }),
     })
     setSaving(false)
     if (!res.ok) {
@@ -168,12 +173,12 @@ export default function TenantsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
-              <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
+              <input maxLength={100} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
-              <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit number"
+              <input type="tel" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => set('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit number"
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
             </div>
           </div>
@@ -193,13 +198,13 @@ export default function TenantsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Cot</label>
-              <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
+              <input maxLength={10} value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
-            <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
+            <input type="number" min="0" max="999999" inputMode="numeric" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -210,7 +215,7 @@ export default function TenantsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Move-out Date</label>
-              <input type="date" value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
+              <input type="date" min={form.move_in_date || undefined} value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
             </div>
           </div>
@@ -441,7 +446,7 @@ export default function TenantsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Move-out Date</label>
-                      <input type="date" value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
+                      <input type="date" min={form.move_in_date || undefined} value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
                         className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                     </div>
                   </div>

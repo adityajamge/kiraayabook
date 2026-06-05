@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Building2, Save, Upload, LayoutGrid, Moon, FileText } from 'lucide-react'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 type OrgSettings = {
   name: string
@@ -18,15 +19,24 @@ function Field({
   label,
   value,
   onChange,
+  type = 'text',
+  maxLength,
+  inputMode,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
+  type?: string
+  maxLength?: number
+  inputMode?: React.InputHTMLAttributes<HTMLInputElement>['inputMode']
 }) {
   return (
     <div className="space-y-1.5">
       <label className="text-sm text-gray-600 dark:text-gray-400">{label}</label>
       <input
+        type={type}
+        maxLength={maxLength}
+        inputMode={inputMode}
         className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -52,6 +62,10 @@ export default function SettingsPage() {
 
   async function saveProfile() {
     if (!settings) return
+    if (settings.phone && !/^\d{10}$/.test(settings.phone)) {
+      toast.error('Contact number must be exactly 10 digits.')
+      return
+    }
     setSaving(true)
     await fetch('/api/settings', {
       method: 'PUT',
@@ -128,21 +142,27 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             label="PG Name"
+            maxLength={100}
             value={settings.name}
             onChange={v => set('name', v)}
           />
           <Field
             label="Owner Name"
+            maxLength={100}
             value={settings.owner_name ?? ''}
             onChange={v => set('owner_name', v)}
           />
           <Field
             label="Contact Number"
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
             value={settings.phone ?? ''}
-            onChange={v => set('phone', v)}
+            onChange={v => set('phone', v.replace(/\D/g, '').slice(0, 10))}
           />
           <Field
             label="Address"
+            maxLength={300}
             value={settings.address ?? ''}
             onChange={v => set('address', v)}
           />
@@ -176,6 +196,7 @@ export default function SettingsPage() {
           <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1.5">Notes (shown on bill)</label>
           <textarea
             rows={3}
+            maxLength={500}
             placeholder="e.g. Rent is due on the 5th of every month. Late payment attracts ₹100 fine."
             value={settings.bill_notes ?? ''}
             onChange={e => set('bill_notes', e.target.value || null)}

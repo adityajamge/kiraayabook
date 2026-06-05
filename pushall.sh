@@ -4,13 +4,13 @@ set -e
 # ============================================
 # Push to BOTH GitHub accounts
 # ============================================
-# origin   → adijam-dev/kiraayabook   (Vercel) — uses adijam.dev@gmail.com
-# personal → adityajamge/kiraayabook  (Green graph) — uses adityajamgelatur@gmail.com
+# origin     → adityajamge/kiraayabook  (Personal graph) — uses adityajamgelatur@gmail.com
+# production → adijam-dev/kiraayabook   (Vercel) — uses adijam.dev@gmail.com
 # ============================================
 #
 # WORKFLOW:
-#   git push origin main   → adijam-dev (Vercel), adijam.dev@gmail.com
-#   bash pushall.sh        → adityajamge (Personal), adityajamgelatur@gmail.com
+#   git push origin main   → adityajamge (Personal), adityajamgelatur@gmail.com
+#   bash pushall.sh        → adijam-dev  (Vercel),   adijam.dev@gmail.com
 # ============================================
 
 BRANCH=$(git branch --show-current)
@@ -24,9 +24,9 @@ echo ""
 echo "📦 Branch: $BRANCH"
 echo "============================================"
 
-# ── Push to personal repo (adityajamge) with rewritten author ──
+# ── Push to production repo (adijam-dev) with rewritten author ──
 echo ""
-echo "🔄 Preparing push for adityajamge/kiraayabook..."
+echo "🔄 Preparing push for adijam-dev/kiraayabook..."
 
 # Stash any uncommitted changes so filter-branch can work
 STASHED=false
@@ -37,26 +37,26 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 
 # Clean up any leftover temp branch
-git branch -D _temp_personal 2>/dev/null || true
+git branch -D _temp_production 2>/dev/null || true
 
 # Create temp branch from current position
-git checkout -b _temp_personal
+git checkout -b _temp_production
 
-# Rewrite ALL commits on this branch to use personal email
+# Rewrite ALL commits on this branch to use production email
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter '
 GIT_AUTHOR_NAME="Aditya Jamge"
-GIT_AUTHOR_EMAIL="adityajamgelatur@gmail.com"
+GIT_AUTHOR_EMAIL="adijam.dev@gmail.com"
 GIT_COMMITTER_NAME="Aditya Jamge"
-GIT_COMMITTER_EMAIL="adityajamgelatur@gmail.com"
+GIT_COMMITTER_EMAIL="adijam.dev@gmail.com"
 ' HEAD
 
-# Force push to personal remote (force needed because commit hashes differ)
-echo "🚀 Pushing to adityajamge/kiraayabook (Personal)..."
-git push personal "_temp_personal:$BRANCH" --force
+# Force push to production remote (force needed because commit hashes differ)
+echo "🚀 Pushing to adijam-dev/kiraayabook (Vercel/Production)..."
+git push production "_temp_production:$BRANCH" --force
 
 # ── Cleanup ──
 git checkout "$BRANCH"
-git branch -D _temp_personal
+git branch -D _temp_production
 # Clean filter-branch backup refs
 git for-each-ref --format='delete %(refname)' refs/original/ | git update-ref --stdin 2>/dev/null || true
 
@@ -68,5 +68,5 @@ fi
 
 echo ""
 echo "============================================"
-echo "✅ Done! Pushed to adityajamge/kiraayabook (Personal)"
+echo "✅ Done! Pushed to adijam-dev/kiraayabook (Vercel/Production)"
 echo "============================================"

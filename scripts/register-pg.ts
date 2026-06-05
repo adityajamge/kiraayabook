@@ -1,4 +1,6 @@
-import { db } from '../src/lib/db'
+import { neon } from '@neondatabase/serverless'
+import { drizzle } from 'drizzle-orm/neon-http'
+import * as schema from '../src/lib/db/schema'
 import { organisations, users } from '../src/lib/db/schema'
 import bcrypt from 'bcryptjs'
 import * as readline from 'readline'
@@ -8,6 +10,30 @@ const ask = (q: string) => new Promise<string>(res => rl.question(q, res))
 
 async function main() {
   console.log('\n── KiraayaBook: Register new PG ──\n')
+
+  // ── Database connection ──
+  const envUrl = process.env.DATABASE_URL
+  let dbUrl: string
+
+  if (envUrl) {
+    const useEnv = await ask(`Use DATABASE_URL from .env.local? (y/n): `)
+    if (useEnv.trim().toLowerCase() === 'y') {
+      dbUrl = envUrl
+    } else {
+      dbUrl = await ask('Enter Neon PostgreSQL connection string: ')
+    }
+  } else {
+    console.log('No DATABASE_URL found in .env.local.')
+    dbUrl = await ask('Enter Neon PostgreSQL connection string: ')
+  }
+
+  if (!dbUrl.trim()) {
+    console.error('No connection string provided. Aborting.')
+    process.exit(1)
+  }
+
+  const db = drizzle({ client: neon(dbUrl.trim()), schema })
+  console.log('')
 
   const pgName    = await ask('PG full name   (e.g. Nathkrupa PG Service):          ')
   const shortName = await ask('PWA short name (shown on home screen, max ~12 chars): ')

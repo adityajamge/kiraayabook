@@ -233,6 +233,7 @@ export default function ExpensesPage() {
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">Description</label>
               <input
+                maxLength={200}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g. Electricity bill"
@@ -245,6 +246,8 @@ export default function ExpensesPage() {
               <input
                 type="number"
                 min="1"
+                max="999999"
+                inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="e.g. 2500"
@@ -255,6 +258,7 @@ export default function ExpensesPage() {
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">Date</label>
               <input
                 type="date"
+                max={today}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"

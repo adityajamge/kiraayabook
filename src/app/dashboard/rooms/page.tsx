@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, DoorOpen, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
@@ -46,14 +47,29 @@ export default function RoomsPage() {
   }
 
   const handleSave = async () => {
-    if (!form.room_number || !form.capacity) return
+    const trimmedNumber = form.room_number.trim()
+    if (!trimmedNumber || !form.capacity) {
+      toast.error('Please fill all required fields.')
+      return
+    }
+    const cap = Number(form.capacity)
+    if (isNaN(cap) || cap < 1 || cap > 20) {
+      toast.error('Capacity must be between 1 and 20.')
+      return
+    }
     setSaving(true)
     const url = editing ? `/api/rooms/${editing.id}` : '/api/rooms'
-    await fetch(url, {
+    const res = await fetch(url, {
       method: editing ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, capacity: Number(form.capacity) }),
+      body: JSON.stringify({ ...form, room_number: trimmedNumber, capacity: cap }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to save room.')
+      setSaving(false)
+      return
+    }
     setSaving(false)
     setOpen(false)
     load()
@@ -87,17 +103,17 @@ export default function RoomsPage() {
         <div className="space-y-4 mt-2">
           <div>
             <label className="block text-sm font-medium mb-1.5">Room Number <span className="text-red-500">*</span></label>
-            <input value={form.room_number} onChange={(e) => set('room_number', e.target.value)} placeholder="e.g. 101"
+            <input maxLength={10} value={form.room_number} onChange={(e) => set('room_number', e.target.value)} placeholder="e.g. 101"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">Capacity <span className="text-red-500">*</span></label>
-            <input type="number" min="1" value={form.capacity} onChange={(e) => set('capacity', e.target.value)} placeholder="e.g. 4"
+            <input type="number" min="1" max="20" inputMode="numeric" value={form.capacity} onChange={(e) => set('capacity', e.target.value)} placeholder="e.g. 4"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">Floor</label>
-            <input value={form.floor} onChange={(e) => set('floor', e.target.value)} placeholder="e.g. Ground, 1st Floor"
+            <input maxLength={50} value={form.floor} onChange={(e) => set('floor', e.target.value)} placeholder="e.g. Ground, 1st Floor"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
           </div>
           <div>
@@ -207,17 +223,17 @@ export default function RoomsPage() {
               <div className="space-y-4 mt-2">
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Room Number <span className="text-red-500">*</span></label>
-                  <input value={form.room_number} onChange={(e) => set('room_number', e.target.value)} placeholder="e.g. 101"
+                  <input maxLength={10} value={form.room_number} onChange={(e) => set('room_number', e.target.value)} placeholder="e.g. 101"
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Capacity <span className="text-red-500">*</span></label>
-                  <input type="number" min="1" value={form.capacity} onChange={(e) => set('capacity', e.target.value)} placeholder="e.g. 4"
+                  <input type="number" min="1" max="20" inputMode="numeric" value={form.capacity} onChange={(e) => set('capacity', e.target.value)} placeholder="e.g. 4"
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Floor</label>
-                  <input value={form.floor} onChange={(e) => set('floor', e.target.value)} placeholder="e.g. Ground"
+                  <input maxLength={50} value={form.floor} onChange={(e) => set('floor', e.target.value)} placeholder="e.g. Ground"
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>

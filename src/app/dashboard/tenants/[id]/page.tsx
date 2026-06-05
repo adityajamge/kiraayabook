@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, ExternalLink, Pencil, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { BillPreview, type BillData } from '@/components/bill-preview'
+import { toast } from 'sonner'
 
 interface Tenant {
   id: string; name: string; phone: string; email: string | null
@@ -110,17 +111,37 @@ export default function TenantDetailPage() {
 
   const handleSave = async () => {
     if (!editForm) return
+    const trimmedName = editForm.name.trim()
+    if (!trimmedName || !editForm.phone || !editForm.room_id || !editForm.move_in_date) {
+      toast.error('Please fill all required fields.')
+      return
+    }
+    if (!/^\d{10}$/.test(editForm.phone)) {
+      toast.error('Phone number must be exactly 10 digits.')
+      return
+    }
+    if (editForm.move_out_date && editForm.move_out_date <= editForm.move_in_date) {
+      toast.error('Move-out date must be after move-in date.')
+      return
+    }
     setSaving(true)
     const res = await fetch(`/api/tenants/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...editForm,
-        email:         editForm.email || undefined,
+        name:          trimmedName,
+        email:         editForm.email.trim() || undefined,
         cot_number:    editForm.cot_number || undefined,
         move_out_date: editForm.move_out_date || undefined,
       }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to update tenant.')
+      setSaving(false)
+      return
+    }
     const updated: Tenant = await res.json()
     setTenant(updated)
     setEditForm(tenantToForm(updated))
@@ -181,12 +202,12 @@ export default function TenantDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Name <span className="text-red-500">*</span></label>
-                  <input value={editForm.name} onChange={e => setField('name', e.target.value)}
+                  <input maxLength={100} value={editForm.name} onChange={e => setField('name', e.target.value)}
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Phone <span className="text-red-500">*</span></label>
-                  <input value={editForm.phone} onChange={e => setField('phone', e.target.value)}
+                  <input type="tel" inputMode="numeric" maxLength={10} value={editForm.phone} onChange={e => setField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
@@ -205,7 +226,7 @@ export default function TenantDetailPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Cot</label>
-                  <input value={editForm.cot_number} onChange={e => setField('cot_number', e.target.value)} placeholder="e.g. C1"
+                  <input maxLength={10} value={editForm.cot_number} onChange={e => setField('cot_number', e.target.value)} placeholder="e.g. C1"
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
@@ -217,7 +238,7 @@ export default function TenantDetailPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Move-out Date</label>
-                  <input type="date" value={editForm.move_out_date} onChange={e => setField('move_out_date', e.target.value)}
+                  <input type="date" min={editForm.move_in_date || undefined} value={editForm.move_out_date} onChange={e => setField('move_out_date', e.target.value)}
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
@@ -232,14 +253,14 @@ export default function TenantDetailPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Monthly Rent (₹)</label>
-                  <input type="number" min="0" value={editForm.rent_amount} onChange={e => setField('rent_amount', e.target.value)} placeholder="e.g. 5000"
+                  <input type="number" min="0" max="999999" inputMode="numeric" value={editForm.rent_amount} onChange={e => setField('rent_amount', e.target.value)} placeholder="e.g. 5000"
                     className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setEditOpen(false)}
                   className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
-                <button onClick={handleSave} disabled={saving || !editForm.name || !editForm.phone || !editForm.room_id}
+                <button onClick={handleSave} disabled={saving || !editForm.name.trim() || !editForm.phone || !editForm.room_id || !editForm.move_in_date}
                   className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>

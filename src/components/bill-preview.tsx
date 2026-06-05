@@ -18,6 +18,7 @@ export interface BillData {
   periodTo: string
   amount: number
   paymentMode: string | null
+  status: string
 }
 
 const MAROON = '#8B0000'
@@ -128,10 +129,18 @@ function BillContent({ data }: { data: BillData }) {
 
         {/* Left column */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 13, paddingRight: 20 }}>
-          {/* Bill No — plain bold maroon, no box */}
+          {/* Bill No + status badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 30 }}>
             <span style={{ fontSize: 12, color: '#3a0000', fontFamily: SERIF }}>Bill No :</span>
             <span style={{ fontSize: 18, fontWeight: 700, color: MAROON, fontFamily: SERIF }}>{data.billNo}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+              padding: '2px 8px', borderRadius: 4,
+              background: data.status === 'paid' ? '#166534' : '#991b1b',
+              color: '#fff', fontFamily: 'Arial, sans-serif',
+            }}>
+              {data.status === 'paid' ? 'PAID' : 'UNPAID'}
+            </span>
           </div>
           <Row label="Full Name :"><Box value={data.tenantName} /></Row>
           <Row label="Joining Date :"><Box value={fmtDate(data.joiningDate)} /></Row>

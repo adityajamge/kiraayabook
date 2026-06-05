@@ -23,15 +23,13 @@ export async function GET(request: Request) {
     return Response.json((rows as any)[0])
   }
 
-  const rows = await db.execute(sql`
-    SELECT *,
-      ROW_NUMBER() OVER (PARTITION BY org_id ORDER BY created_at ASC) AS bill_no
-    FROM rent_records
-    WHERE org_id = ${org_id}
-    ORDER BY due_date
-  `)
-  const data = Array.isArray(rows) ? rows : rows?.rows ?? []
-  return Response.json(data)
+  const rows = await db
+    .select()
+    .from(rent_records)
+    .where(eq(rent_records.org_id, org_id))
+    .orderBy(rent_records.due_date)
+
+  return Response.json(rows)
 }
 
 export async function POST(request: Request) {
@@ -44,9 +42,14 @@ export async function POST(request: Request) {
     return Response.json({ error: 'tenant_id, amount, period_start, period_end, and due_date are required' }, { status: 400 })
   }
 
+  // Get the next bill_no for this org (max existing + 1)
+  const [{ max_bill_no }] = await db.execute(sql`
+    SELECT COALESCE(MAX(bill_no), 0) AS max_bill_no FROM rent_records WHERE org_id = ${org_id}
+  `) as [{ max_bill_no: number }]
+
   const [record] = await db
     .insert(rent_records)
-    .values({ org_id, tenant_id, amount, period_start, period_end, due_date, payment_mode })
+    .values({ org_id, tenant_id, amount, period_start, period_end, due_date, payment_mode, bill_no: max_bill_no + 1 })
     .returning()
 
   return Response.json(record, { status: 201 })

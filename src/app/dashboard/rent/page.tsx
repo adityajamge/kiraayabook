@@ -116,6 +116,7 @@ export default function RentPage() {
       periodTo:    r.period_end,
       amount:      r.amount,
       paymentMode: r.payment_mode,
+      status:      r.status,
     }
   }
 

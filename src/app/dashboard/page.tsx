@@ -109,7 +109,7 @@ export default function DashboardPage() {
           </div>
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
             {org?.logo_url ? (
-              <Image src={org.logo_url} alt="logo" width={40} height={40} className="w-full h-full object-cover" />
+              <Image src={org.logo_url} alt="logo" width={40} height={40} className="w-full h-full object-contain" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-gray-400" />

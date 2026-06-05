@@ -44,10 +44,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-black rounded-[22px] flex items-center justify-center overflow-hidden mb-4 shadow-lg">
+          <div className={`w-20 h-20 rounded-[22px] flex items-center justify-center overflow-hidden mb-4 shadow-lg ${logoUrl ? '' : 'bg-black'}`}>
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+              <img src={logoUrl} alt="logo" className="w-full h-full object-contain" />
             ) : (
               <Home className="w-9 h-9 text-white" />
             )}

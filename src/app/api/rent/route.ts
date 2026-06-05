@@ -43,9 +43,11 @@ export async function POST(request: Request) {
   }
 
   // Get the next bill_no for this org (max existing + 1)
-  const [{ max_bill_no }] = await db.execute(sql`
+  const maxResult = await db.execute(sql`
     SELECT COALESCE(MAX(bill_no), 0) AS max_bill_no FROM rent_records WHERE org_id = ${org_id}
-  `) as [{ max_bill_no: number }]
+  `)
+  const rows = Array.isArray(maxResult) ? maxResult : (maxResult?.rows ?? [])
+  const max_bill_no = Number((rows[0] as Record<string, unknown>)?.max_bill_no ?? 0)
 
   const [record] = await db
     .insert(rent_records)

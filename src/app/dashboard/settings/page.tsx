@@ -247,14 +247,14 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex items-center gap-5 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+          <div className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${settings.logo_url ? '' : 'bg-black'}`}>
             {settings.logo_url ? (
               <Image
                 src={settings.logo_url}
                 alt="PG Logo"
                 width={56}
                 height={56}
-                className="object-cover w-full h-full"
+                className="object-contain w-full h-full"
               />
             ) : (
               <LayoutGrid className="w-6 h-6 text-white" />

@@ -22,9 +22,9 @@ export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: strin
     <aside className="hidden lg:flex w-56 xl:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col shrink-0">
       <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 ${logoUrl ? '' : 'bg-black dark:bg-white'}`}>
             {logoUrl ? (
-              <Image src={logoUrl} alt="logo" width={32} height={32} className="object-cover w-full h-full" />
+              <Image src={logoUrl} alt="logo" width={32} height={32} className="object-contain w-full h-full" />
             ) : (
               <LayoutGrid className="w-4 h-4 text-white dark:text-black" />
             )}

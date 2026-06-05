@@ -64,6 +64,7 @@ export const rent_records = pgTable('rent_records', {
   paid_date:    date('paid_date'),
   payment_mode: text('payment_mode'),
   status:       text('status').notNull().default('pending'),
+  bill_no:      integer('bill_no'),
   created_at:   timestamp('created_at').defaultNow(),
 })
 

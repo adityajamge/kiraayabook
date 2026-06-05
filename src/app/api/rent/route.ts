@@ -23,13 +23,15 @@ export async function GET(request: Request) {
     return Response.json((rows as any)[0])
   }
 
-  const rows = await db
-    .select()
-    .from(rent_records)
-    .where(eq(rent_records.org_id, org_id))
-    .orderBy(rent_records.due_date)
-
-  return Response.json(rows)
+  const rows = await db.execute(sql`
+    SELECT *,
+      ROW_NUMBER() OVER (PARTITION BY org_id ORDER BY created_at ASC) AS bill_no
+    FROM rent_records
+    WHERE org_id = ${org_id}
+    ORDER BY due_date
+  `)
+  const data = Array.isArray(rows) ? rows : rows?.rows ?? []
+  return Response.json(data)
 }
 
 export async function POST(request: Request) {

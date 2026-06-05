@@ -82,7 +82,7 @@ function PayMode({ label, active }: { label: string; active: boolean }) {
 }
 
 function BillContent({ data }: { data: BillData }) {
-  const isOnline = data.paymentMode === 'upi' || data.paymentMode === 'bank'
+  const isOnline = data.paymentMode === 'online'
   const isCash   = data.paymentMode === 'cash'
   const isCheque = data.paymentMode === 'cheque'
 
@@ -91,24 +91,25 @@ function BillContent({ data }: { data: BillData }) {
       background: CREAM,
       width: 880,
       fontFamily: SERIF,
-      position: 'relative',
     }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', padding: '20px 90px 14px', position: 'relative' }}>
-        {data.logoUrl && (
-          <div style={{ position: 'absolute', top: 14, right: 20, lineHeight: 0 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={data.logoUrl}
-              alt=""
-              crossOrigin="anonymous"
-              style={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
-            />
-          </div>
-        )}
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: MAROON, margin: 0, lineHeight: 1.2 }}>
+      {/* Header — flex so logo placement is captured correctly by html2canvas */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 24px 14px', gap: 12 }}>
+        {/* spacer mirrors logo width so title stays centered */}
+        <div style={{ width: 64, flexShrink: 0 }} />
+        <h1 style={{ flex: 1, fontSize: 26, fontWeight: 700, color: MAROON, margin: 0, lineHeight: 1.2, textAlign: 'center' }}>
           {data.pgName}
         </h1>
+        {data.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={data.logoUrl}
+            alt=""
+            crossOrigin="anonymous"
+            style={{ width: 64, height: 64, display: 'block', flexShrink: 0 }}
+          />
+        ) : (
+          <div style={{ width: 64, flexShrink: 0 }} />
+        )}
       </div>
 
       {/* Address strip */}
@@ -242,8 +243,7 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
       await new Promise(r => { img.onload = r })
       const ratio = img.width / img.height
       const pdfH = W / ratio
-      const yOff = (H - pdfH) / 2
-      pdf.addImage(result.dataUrl, 'JPEG', 0, yOff > 0 ? yOff : 0, W, pdfH > H ? H : pdfH)
+      pdf.addImage(result.dataUrl, 'JPEG', 0, 0, W, pdfH > H ? H : pdfH)
       pdf.save(`bill-${data.billNo}.pdf`)
     } finally {
       setExporting(false)

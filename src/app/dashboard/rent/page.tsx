@@ -18,6 +18,7 @@ interface RentRecord {
   paid_date: string | null
   payment_mode: string | null
   status: string
+  bill_no: number
 }
 interface OrgSettings {
   name: string
@@ -46,9 +47,6 @@ function isOverdue(record: RentRecord) {
   return record.status === 'pending' && new Date(record.due_date) < new Date()
 }
 
-function billNo(id: string) {
-  return String(parseInt(id.replace(/-/g, '').slice(-6), 16) % 9000 + 1000)
-}
 
 export default function RentPage() {
   const [records, setRecords] = useState<RentRecord[]>([])
@@ -109,7 +107,7 @@ export default function RentPage() {
       phone:       org?.phone      ?? null,
       logoUrl:     org?.logo_url   ?? null,
       billNotes:   org?.bill_notes ?? null,
-      billNo:      billNo(r.id),
+      billNo:      String(r.bill_no),
       date:        r.paid_date ?? new Date().toISOString().slice(0, 10),
       tenantName:  t.name,
       roomNumber:  roomMap[t.room_id] ?? '—',
@@ -139,9 +137,9 @@ export default function RentPage() {
             <label className="block text-sm font-medium mb-1">Payment Mode</label>
             <select value={payMode} onChange={(e) => setPayMode(e.target.value)}
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
+              <option value="online">Online</option>
               <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="bank">Bank Transfer</option>
+              <option value="cheque">Cheque</option>
             </select>
           </div>
           <div className="flex gap-2 pt-1">

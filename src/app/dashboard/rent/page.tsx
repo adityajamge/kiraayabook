@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, CheckCircle, MessageCircle, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle, MessageCircle, CalendarDays } from 'lucide-react'
 import { TableSkeleton } from '@/components/skeletons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -200,10 +200,17 @@ export default function RentPage() {
                       {r.status === 'paid' ? '✓ Paid' : overdue ? '⚠ Overdue' : 'Pending'}
                     </span>
                     {r.status === 'pending' && (
-                      <button onClick={() => sendWhatsApp(r)}
-                        className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
-                        <MessageCircle className="w-3.5 h-3.5 text-white" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setPayDialog({ id: r.id, name: t?.name ?? 'Tenant' }); setPayMode('cash') }}
+                          className="flex items-center gap-1 text-xs bg-black text-white font-semibold px-3 py-1.5 rounded-full hover:bg-gray-800">
+                          <CheckCircle className="w-3 h-3" />Paid
+                        </button>
+                        <button onClick={() => sendWhatsApp(r)}
+                          className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
+                          <MessageCircle className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -211,22 +218,6 @@ export default function RentPage() {
             })}
           </div>
         )}
-
-        {/* Record Payment FAB */}
-        <button
-          onClick={() => {
-            const first = records.find((r) => r.status === 'pending')
-            if (first) {
-              const t = tenantMap[first.tenant_id]
-              setPayDialog({ id: first.id, name: t?.name ?? 'Tenant' })
-              setPayMode('cash')
-            }
-          }}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black text-white text-sm font-semibold px-5 py-3.5 rounded-full shadow-lg hover:bg-gray-800 transition-colors z-40"
-        >
-          <Plus className="w-4 h-4" />
-          Record Payment
-        </button>
 
         {markPaidDialog}
       </div>

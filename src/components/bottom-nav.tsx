@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, FileText, Settings, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -17,7 +17,7 @@ export function BottomNav() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
-  const moreActive = pathname.startsWith('/dashboard/documents') || pathname.startsWith('/dashboard/settings')
+  const moreActive = pathname.startsWith('/dashboard/settings')
 
   return (
     <>
@@ -64,19 +64,6 @@ export function BottomNav() {
             style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
           >
             <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-5" />
-            <Link
-              href="/dashboard/documents"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 mb-2"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </div>
-                <span className="font-semibold text-[15px] dark:text-white">Documents</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </Link>
             <Link
               href="/dashboard/settings"
               onClick={() => setOpen(false)}

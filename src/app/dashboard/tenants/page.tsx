@@ -233,66 +233,150 @@ export default function TenantsPage() {
       <div className="lg:hidden">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold dark:text-white">Tenants</h1>
-          <button onClick={() => setSearch((s) => s === '__open__' ? '' : '__open__')}
-            className="w-9 h-9 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-500">
-            <Search className="w-4 h-4" />
+          {tab === 'tenants' && (
+            <button onClick={() => setSearch((s) => s ? '' : ' ')}
+              className="w-9 h-9 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-500">
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-4">
+          <button onClick={() => setTab('tenants')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
+            All Tenants
+          </button>
+          <button onClick={() => setTab('collect')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === 'collect' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
+            Collect Rent
+            {pendingCount > 0 && tab !== 'collect' && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+            )}
           </button>
         </div>
 
-        {/* Search bar */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search === '__open__' ? '' : search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tenants..."
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none dark:text-white" />
-        </div>
+        {/* ── All Tenants tab ── */}
+        {tab === 'tenants' && (
+          <>
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={search.trim()}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tenants..."
+                className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none dark:text-white" />
+            </div>
 
-        {/* Filter chips */}
-        <div className="flex items-center gap-2 mb-4">
-          {([['all', 'All'], ['active', 'Active'], ['vacated', 'Exited']] as [StatusFilter, string][]).map(([val, label]) => (
-            <button key={val} onClick={() => setStatusFilter(val)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${statusFilter === val ? 'bg-black text-white dark:bg-white dark:text-black' : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
+            <div className="flex items-center gap-2 mb-4">
+              {([['all', 'All'], ['active', 'Active'], ['vacated', 'Exited']] as [StatusFilter, string][]).map(([val, label]) => (
+                <button key={val} onClick={() => setStatusFilter(val)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${statusFilter === val ? 'bg-black text-white dark:bg-white dark:text-black' : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        {/* Tenant card list */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-center py-12 text-gray-400 text-sm">No tenants found.</p>
-        ) : (
-          <div className="space-y-2.5">
-            {filtered.map((t) => (
-              <button key={t.id} onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
-                className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left active:bg-gray-50">
-                <div className="w-11 h-11 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
-                  {initials(t.name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm dark:text-white">{t.name}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="flex items-center gap-1 text-xs text-gray-500">
-                      <Building2 className="w-3 h-3" />Room {roomMap[t.room_id] ?? '—'}
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : filtered.length === 0 ? (
+              <p className="text-center py-12 text-gray-400 text-sm">No tenants found.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {filtered.map((t) => (
+                  <button key={t.id} onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                    className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left active:bg-gray-50">
+                    <div className="w-11 h-11 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
+                      {initials(t.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm dark:text-white">{t.name}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Building2 className="w-3 h-3" />Room {roomMap[t.room_id] ?? '—'}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="w-3 h-3" />{fmtDateLong(t.move_in_date)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                      {t.status === 'active' ? 'Active' : 'Exited'}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-500">
-                      <Calendar className="w-3 h-3" />{fmtDateLong(t.move_in_date)}
-                    </span>
-                  </div>
-                </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                  {t.status === 'active' ? 'Active' : 'Exited'}
-                </span>
-              </button>
-            ))}
-          </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {addTenantDialog}
+          </>
         )}
 
-        {tab === 'tenants' && addTenantDialog}
+        {/* ── Collect Rent tab ── */}
+        {tab === 'collect' && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                <button onClick={() => setCollectFilter('pending')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'pending' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
+                  Pending {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
+                </button>
+                <button onClick={() => setCollectFilter('all')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
+                  All
+                </button>
+              </div>
+              <button onClick={loadCollect} className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg">
+                <RefreshCw className="w-3.5 h-3.5" />Refresh
+              </button>
+            </div>
+
+            {collectLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : visibleCollect.length === 0 ? (
+              <p className="text-center py-12 text-gray-400 text-sm">
+                {collectFilter === 'pending' ? 'All rent collected this month!' : 'No records for this month.'}
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {visibleCollect.map((r) => (
+                  <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
+                        {initials(r.tenant_name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm dark:text-white">{r.tenant_name}</p>
+                        <p className="text-xs text-gray-500">Room {r.room_number} · {fmt(r.amount)}</p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${r.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        {r.status === 'paid' ? '✓ Paid' : 'Pending'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-400">Due {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      {r.status === 'pending' && (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setPayDialog({ id: r.id, name: r.tenant_name }); setPayMode('cash') }}
+                            className="flex items-center gap-1.5 text-xs bg-black text-white font-semibold px-3 py-1.5 rounded-full hover:bg-gray-800">
+                            <CheckCircle className="w-3.5 h-3.5" />Mark Paid
+                          </button>
+                          <button onClick={() => sendWhatsApp(r)}
+                            className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
+                            <MessageCircle className="w-4 h-4 text-white" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Desktop layout ── */}

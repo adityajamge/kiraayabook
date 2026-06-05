@@ -119,20 +119,20 @@ export default function TenantDetailPage() {
 
   return (
     <div>
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-5">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white mb-4">
         <ArrowLeft className="w-4 h-4" />Back to tenants
       </button>
 
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">{tenant.name}</h1>
-          <p className="text-gray-500 text-sm">Tenant details and documents</p>
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold dark:text-white truncate">{tenant.name}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Tenant details</p>
         </div>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogTrigger asChild>
-            <button className="flex items-center gap-1.5 border border-gray-200 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shrink-0">
+            <button className="flex items-center gap-1.5 border border-gray-200 dark:border-gray-700 dark:text-gray-300 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0">
               <Pencil className="w-3.5 h-3.5" />Edit
             </button>
           </DialogTrigger>
@@ -141,65 +141,65 @@ export default function TenantDetailPage() {
             <div className="space-y-3 mt-2">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Name <span className="text-red-500">*</span></label>
                   <input value={editForm.name} onChange={e => setField('name', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Phone <span className="text-red-500">*</span></label>
                   <input value={editForm.phone} onChange={e => setField('phone', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Email</label>
                 <input type="email" value={editForm.email} onChange={e => setField('email', e.target.value)} placeholder="Optional"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Room <span className="text-red-500">*</span></label>
                   <select value={editForm.room_id} onChange={e => setField('room_id', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                     {rooms.map(r => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Cot</label>
-                  <input value={editForm.cot_number} onChange={e => setField('cot_number', e.target.value)} placeholder="e.g. C1, Top Bunk"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Cot</label>
+                  <input value={editForm.cot_number} onChange={e => setField('cot_number', e.target.value)} placeholder="e.g. C1"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Move-in Date <span className="text-red-500">*</span></label>
                   <input type="date" value={editForm.move_in_date} onChange={e => setField('move_in_date', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Move-out Date</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Move-out Date</label>
                   <input type="date" value={editForm.move_out_date} onChange={e => setField('move_out_date', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Status</label>
                   <select value={editForm.status} onChange={e => setField('status', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                     <option value="active">Active</option>
                     <option value="vacated">Vacated</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Monthly Rent (₹)</label>
                   <input type="number" min="0" value={editForm.rent_amount} onChange={e => setField('rent_amount', e.target.value)} placeholder="e.g. 5000"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setEditOpen(false)}
-                  className="flex-1 border border-gray-200 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                  className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button onClick={handleSave} disabled={saving || !editForm.name || !editForm.phone || !editForm.room_id}
                   className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                   {saving ? 'Saving…' : 'Save Changes'}
@@ -211,32 +211,32 @@ export default function TenantDetailPage() {
       </div>
 
       {/* Info card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h2 className="font-semibold mb-4">Tenant Information</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-6 mb-4">
+        <h2 className="font-semibold mb-4 dark:text-white">Tenant Information</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4">
           {[
             ['Phone', tenant.phone],
             ['Email', tenant.email ?? '—'],
             ['Room', roomMap[tenant.room_id] ? `Room ${roomMap[tenant.room_id]}` : '—'],
             ['Cot', tenant.cot_number ?? '—'],
             ['Monthly Rent', tenant.rent_amount != null ? `₹${tenant.rent_amount.toLocaleString('en-IN')}` : '—'],
-            ['Move-in', new Date(tenant.move_in_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })],
-            ['Move-out', tenant.move_out_date ? new Date(tenant.move_out_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'],
+            ['Move-in', new Date(tenant.move_in_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })],
+            ['Move-out', tenant.move_out_date ? new Date(tenant.move_out_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'],
             ['Status', null],
           ].map(([label, value]) =>
             label === 'Status' ? (
               <div key="status">
-                <p className="text-xs text-gray-400 mb-1">Status</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">Status</p>
                 <span className={tenant.status === 'active'
                   ? 'bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full'
-                  : 'bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full'}>
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-medium px-2.5 py-1 rounded-full'}>
                   {tenant.status === 'active' ? 'Active' : 'Vacated'}
                 </span>
               </div>
             ) : (
               <div key={label as string}>
-                <p className="text-xs text-gray-400 mb-1">{label}</p>
-                <p className="text-sm font-medium">{value}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
+                <p className="text-sm font-medium dark:text-white">{value}</p>
               </div>
             )
           )}
@@ -244,9 +244,9 @@ export default function TenantDetailPage() {
       </div>
 
       {/* Documents */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">Documents</h2>
+          <h2 className="font-semibold dark:text-white">Documents</h2>
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-1.5 bg-black text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800">
@@ -257,9 +257,9 @@ export default function TenantDetailPage() {
               <DialogHeader><DialogTitle>Upload Document</DialogTitle></DialogHeader>
               <div className="space-y-3 mt-2">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Document Type</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Document Type</label>
                   <select value={docType} onChange={(e) => setDocType(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white">
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white">
                     <option value="aadhaar">Aadhaar</option>
                     <option value="pan">PAN</option>
                     <option value="photo">Photo</option>
@@ -267,16 +267,16 @@ export default function TenantDetailPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">File</label>
-                  <label className="flex items-center gap-3 w-full border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">File</label>
+                  <label className="flex items-center gap-3 w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <span className="shrink-0 bg-black text-white text-xs font-medium px-3 py-1 rounded-md">Choose File</span>
-                    <span className="text-sm text-gray-500 truncate">{file ? file.name : 'No file chosen'}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 truncate">{file ? file.name : 'No file chosen'}</span>
                     <input type="file" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
                   </label>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => setUploadOpen(false)}
-                    className="flex-1 border border-gray-200 text-sm font-medium py-2 rounded-lg hover:bg-gray-50">Cancel</button>
+                    className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                   <button onClick={handleUpload} disabled={!file || uploading}
                     className="flex-1 bg-black text-white text-sm font-medium py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50">
                     {uploading ? 'Uploading...' : 'Upload'}
@@ -292,9 +292,9 @@ export default function TenantDetailPage() {
         ) : (
           <div className="space-y-2">
             {docs.map((d) => (
-              <div key={d.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
+              <div key={d.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
                 <div>
-                  <p className="text-sm font-medium capitalize">{d.doc_type}</p>
+                  <p className="text-sm font-medium capitalize dark:text-white">{d.doc_type}</p>
                   <p className="text-xs text-gray-400">{new Date(d.uploaded_at).toLocaleDateString('en-IN')}</p>
                 </div>
                 <a href={d.file_url} target="_blank" rel="noopener noreferrer"

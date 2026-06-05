@@ -2,17 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, CreditCard, FileText, LayoutGrid, Settings } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, CreditCard, LayoutGrid, Settings } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 const nav = [
-  { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/rooms',     icon: Building2,       label: 'Rooms' },
-  { href: '/dashboard/tenants',   icon: Users,           label: 'Tenants' },
-  { href: '/dashboard/rent',      icon: CreditCard,      label: 'Rent' },
-  { href: '/dashboard/documents', icon: FileText,        label: 'Documents' },
-  { href: '/dashboard/settings',  icon: Settings,        label: 'Settings' },
+  { href: '/dashboard',          icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/dashboard/rooms',    icon: Building2,       label: 'Rooms' },
+  { href: '/dashboard/tenants',  icon: Users,           label: 'Tenants' },
+  { href: '/dashboard/rent',     icon: CreditCard,      label: 'Rent' },
+  { href: '/dashboard/settings', icon: Settings,        label: 'Settings' },
 ]
 
 export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: string | null }) {

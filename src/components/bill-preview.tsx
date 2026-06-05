@@ -199,6 +199,11 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
       useCORS: true,
       backgroundColor: CREAM,
       logging: false,
+      onclone: (clonedDoc) => {
+        // Strip Tailwind/global CSS — bill is purely inline-styled so this is safe.
+        // Prevents html2canvas from crashing on modern color functions (lab, oklch).
+        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(n => n.remove())
+      },
     })
     const dataUrl = canvas.toDataURL('image/jpeg', 0.96)
     const blob = await (await fetch(dataUrl)).blob()

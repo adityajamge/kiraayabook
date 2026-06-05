@@ -5,11 +5,17 @@ import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
+  const { searchParams } = new URL(request.url)
+  const room_id = searchParams.get('room_id')
+
+  const where = room_id
+    ? and(eq(tenants.org_id, org_id), eq(tenants.room_id, room_id))
+    : eq(tenants.org_id, org_id)
 
   const rows = await db
     .select()
     .from(tenants)
-    .where(eq(tenants.org_id, org_id))
+    .where(where)
     .orderBy(tenants.created_at)
 
   return Response.json(rows)

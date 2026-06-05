@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, DoorOpen, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, DoorOpen, Search, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -14,6 +14,14 @@ interface Room {
   capacity: number
   occupied: number
   vacant: number
+}
+
+interface RoomTenant {
+  id: string
+  name: string
+  phone: string
+  cot_number: string | null
+  status: string
 }
 
 const emptyForm = { room_number: '', capacity: '', floor: '', type: '' }
@@ -30,6 +38,9 @@ export default function RoomsPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [viewRoom, setViewRoom] = useState<Room | null>(null)
+  const [roomTenants, setRoomTenants] = useState<RoomTenant[]>([])
+  const [viewLoading, setViewLoading] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -79,6 +90,15 @@ export default function RoomsPage() {
     if (!confirm('Delete this room? This will fail if there are active tenants.')) return
     await fetch(`/api/rooms/${id}`, { method: 'DELETE' })
     load()
+  }
+
+  const openView = async (room: Room) => {
+    setViewRoom(room)
+    setViewLoading(true)
+    const res = await fetch(`/api/tenants?room_id=${room.id}`)
+    const data: RoomTenant[] = await res.json()
+    setRoomTenants(data.filter((t) => t.status === 'active'))
+    setViewLoading(false)
   }
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
@@ -184,7 +204,8 @@ export default function RoomsPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map((room) => (
-              <div key={room.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+              <button key={room.id} onClick={() => openView(room)}
+                className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm text-left active:bg-gray-50 dark:active:bg-gray-800 w-full">
                 <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-3">
                   <DoorOpen className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </div>
@@ -192,13 +213,14 @@ export default function RoomsPage() {
                 {room.floor && <p className="text-xs text-gray-400 mb-2">{room.floor}</p>}
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${room.vacant === 0 ? 'bg-green-100 text-green-700' : 'bg-black text-white dark:bg-gray-700'}`}>
-                    {room.vacant === 0 ? 'Occupied' : 'Vacant'}
+                    {room.vacant === 0 ? 'Full' : `${room.vacant} free`}
                   </span>
-                  <button onClick={() => openEdit(room)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                  <span onClick={(e) => { e.stopPropagation(); openEdit(room) }}
+                    className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1">
                     <Pencil className="w-3.5 h-3.5" />
-                  </button>
+                  </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -274,8 +296,8 @@ export default function RoomsPage() {
               </thead>
               <tbody>
                 {rooms.map((room) => (
-                  <tr key={room.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <td className="px-5 py-4 font-medium">{room.room_number}</td>
+                  <tr key={room.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer" onClick={() => openView(room)}>
+                    <td className="px-5 py-4 font-medium dark:text-white">{room.room_number}</td>
                     <td className="px-5 py-4 text-gray-500">{room.floor ?? '—'}</td>
                     <td className="px-5 py-4 text-gray-500">{room.type ?? '—'}</td>
                     <td className="px-5 py-4">{room.capacity}</td>
@@ -283,9 +305,12 @@ export default function RoomsPage() {
                     <td className="px-5 py-4">
                       <span className={room.vacant > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}>{room.vacant}</span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(room)} className="flex items-center gap-1 text-gray-500 hover:text-gray-900 text-sm">
+                        <button onClick={() => openView(room)} className="flex items-center gap-1 text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm">
+                          <Users className="w-3.5 h-3.5" />View
+                        </button>
+                        <button onClick={() => openEdit(room)} className="flex items-center gap-1 text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm">
                           <Pencil className="w-3.5 h-3.5" />Edit
                         </button>
                         <button onClick={() => handleDelete(room.id)} className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm">
@@ -300,6 +325,46 @@ export default function RoomsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Room tenants dialog ── */}
+      <Dialog open={!!viewRoom} onOpenChange={(v) => { if (!v) { setViewRoom(null); setRoomTenants([]) } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Room {viewRoom?.room_number}</DialogTitle>
+          </DialogHeader>
+          {viewRoom && (
+            <p className="text-xs text-gray-400 -mt-2">
+              {[viewRoom.floor, viewRoom.type, `Capacity ${viewRoom.capacity}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <div className="mt-1">
+            {viewLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+              </div>
+            ) : roomTenants.length === 0 ? (
+              <div className="flex flex-col items-center py-8 text-gray-400">
+                <DoorOpen className="w-8 h-8 mb-2 opacity-40" />
+                <p className="text-sm">No active tenants in this room.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {roomTenants.map((t) => (
+                  <div key={t.id} className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <div className="w-9 h-9 bg-black dark:bg-gray-700 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">
+                      {t.cot_number ?? '—'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold dark:text-white truncate">{t.name}</p>
+                      <p className="text-xs text-gray-400">{t.phone}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -193,17 +193,12 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
   const captureJpeg = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
     const el = billRef.current
     if (!el) return null
-    const { default: html2canvas } = await import('html2canvas')
+    const { default: html2canvas } = await import('html2canvas-pro')
     const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: CREAM,
       logging: false,
-      onclone: (clonedDoc) => {
-        // Strip Tailwind/global CSS — bill is purely inline-styled so this is safe.
-        // Prevents html2canvas from crashing on modern color functions (lab, oklch).
-        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(n => n.remove())
-      },
     })
     const dataUrl = canvas.toDataURL('image/jpeg', 0.96)
     const blob = await (await fetch(dataUrl)).blob()

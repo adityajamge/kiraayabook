@@ -12,6 +12,7 @@ export async function GET(request: Request) {
       phone:      organisations.phone,
       address:    organisations.address,
       logo_url:   organisations.logo_url,
+      bill_notes: organisations.bill_notes,
       dark_mode:  organisations.dark_mode,
     })
     .from(organisations)
@@ -28,6 +29,7 @@ export async function PUT(request: Request) {
   if ('owner_name' in body) updates.owner_name = body.owner_name
   if ('phone'      in body) updates.phone      = body.phone
   if ('address'    in body) updates.address    = body.address
+  if ('bill_notes' in body) updates.bill_notes = body.bill_notes
   if ('dark_mode'  in body) updates.dark_mode  = body.dark_mode
 
   if (Object.keys(updates).length === 0)

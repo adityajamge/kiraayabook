@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Building2, Save, Upload, LayoutGrid, Moon } from 'lucide-react'
+import { Building2, Save, Upload, LayoutGrid, Moon, FileText } from 'lucide-react'
 import Image from 'next/image'
 
 type OrgSettings = {
@@ -10,6 +10,7 @@ type OrgSettings = {
   phone: string | null
   address: string | null
   logo_url: string | null
+  bill_notes: string | null
   dark_mode: boolean
 }
 
@@ -60,6 +61,7 @@ export default function SettingsPage() {
         owner_name: settings.owner_name,
         phone:      settings.phone,
         address:    settings.address,
+        bill_notes: settings.bill_notes,
       }),
     })
     setSaving(false)
@@ -143,6 +145,41 @@ export default function SettingsPage() {
             label="Address"
             value={settings.address ?? ''}
             onChange={v => set('address', v)}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={saveProfile}
+            disabled={saving}
+            className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </section>
+
+      {/* Bill Notes */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
+        <div>
+          <div className="flex items-center gap-2 font-semibold dark:text-white">
+            <FileText className="w-4 h-4" />
+            Bill Notes
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            This note is printed on every rent bill you generate.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+          <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1.5">Notes (shown on bill)</label>
+          <textarea
+            rows={3}
+            placeholder="e.g. Rent is due on the 5th of every month. Late payment attracts ₹100 fine."
+            value={settings.bill_notes ?? ''}
+            onChange={e => set('bill_notes', e.target.value || null)}
+            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white resize-none"
           />
         </div>
 

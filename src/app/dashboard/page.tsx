@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Building2, Users, AlertCircle, MessageCircle, BedDouble, MapPin } from 'lucide-react'
+import { Building2, Users, AlertCircle, MessageCircle, BedDouble, MapPin, Receipt, TrendingUp, TrendingDown } from 'lucide-react'
 import { DashboardSkeleton } from '@/components/skeletons'
 import Image from 'next/image'
 
@@ -11,6 +11,7 @@ interface Stats {
   total_occupied: number
   rent_collected: number
   rent_pending: number
+  expenses_total: number
 }
 
 interface PendingTenant {
@@ -174,7 +175,7 @@ export default function DashboardPage() {
 
         {/* Pending Rent summary card */}
         {stats.rent_pending > 0 && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 mb-3 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                 <AlertCircle className="w-5 h-5 text-red-500" />
@@ -187,6 +188,34 @@ export default function DashboardPage() {
             <span className="font-bold text-red-500">{fmt(stats.rent_pending)}</span>
           </div>
         )}
+
+        {/* Expenses + Net */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+            <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-2">
+              <Receipt className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Expenses</p>
+            <p className="text-xl font-bold text-orange-500">{fmt(stats.expenses_total)}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{monthLabel}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+            {stats.rent_collected - stats.expenses_total >= 0 ? (
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-2">
+                <TrendingDown className="w-4 h-4 text-red-500" />
+              </div>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400">Net Income</p>
+            <p className={`text-xl font-bold ${stats.rent_collected - stats.expenses_total >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {fmt(stats.rent_collected - stats.expenses_total)}
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Collected − Expenses</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Desktop layout ── */}
@@ -196,7 +225,7 @@ export default function DashboardPage() {
           <p className="text-gray-500 text-sm mt-0.5">{"Here's what's happening at your PG today."}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-gray-500">Total Rooms</span>
@@ -238,6 +267,34 @@ export default function DashboardPage() {
             </div>
             <p className="text-3xl font-bold text-red-600">{fmt(stats.rent_pending)}</p>
             <p className="text-xs text-gray-400 mt-1">This month</p>
+          </div>
+        </div>
+
+        {/* Expenses + Net Income row */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500">Expenses</span>
+              <div className="w-8 h-8 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                <Receipt className="w-4 h-4 text-orange-500" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-orange-500">{fmt(stats.expenses_total)}</p>
+            <p className="text-xs text-gray-400 mt-1">This month</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500">Net Income</span>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stats.rent_collected - stats.expenses_total >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                {stats.rent_collected - stats.expenses_total >= 0
+                  ? <TrendingUp className="w-4 h-4 text-green-500" />
+                  : <TrendingDown className="w-4 h-4 text-red-500" />}
+              </div>
+            </div>
+            <p className={`text-3xl font-bold ${stats.rent_collected - stats.expenses_total >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {fmt(stats.rent_collected - stats.expenses_total)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">Collected − Expenses</p>
           </div>
         </div>
 

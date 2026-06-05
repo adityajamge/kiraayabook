@@ -83,18 +83,29 @@ export async function GET(request: Request) {
   `)
   )
 
+  const expenseRows = rowsOf<{ total: number }>(
+    await db.execute(sql`
+    SELECT COALESCE(SUM(amount), 0)::int AS total
+    FROM expenses
+    WHERE org_id = ${org_id} AND TO_CHAR(date, 'YYYY-MM') = ${month}
+  `)
+  )
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rs = (roomStatsRows as any)[0] ?? {}
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rr = (rentRows as any)[0] ?? {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ex = (expenseRows as any)[0] ?? {}
 
   return Response.json({
     stats: {
-      total_rooms:    rs.total_rooms    ?? 0,
-      total_capacity: rs.total_capacity ?? 0,
-      total_occupied: rs.total_occupied ?? 0,
-      rent_collected: rr.collected      ?? 0,
-      rent_pending:   rr.pending_amount ?? 0,
+      total_rooms:      rs.total_rooms    ?? 0,
+      total_capacity:   rs.total_capacity ?? 0,
+      total_occupied:   rs.total_occupied ?? 0,
+      rent_collected:   rr.collected      ?? 0,
+      rent_pending:     rr.pending_amount ?? 0,
+      expenses_total:   ex.total          ?? 0,
     },
     pending_rent: pendingRent,
     vacant_rooms: vacantRooms,

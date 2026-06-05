@@ -9,6 +9,7 @@ export const organisations = pgTable('organisations', {
   phone:                  text('phone'),
   address:                text('address'),
   logo_url:               text('logo_url'),
+  bill_notes:             text('bill_notes'),
   dark_mode:              boolean('dark_mode').notNull().default(false),
   plan:                   text('plan').notNull().default('starter'),
   google_access_token:    text('google_access_token'),

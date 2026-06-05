@@ -234,9 +234,9 @@ export default function TenantDetailPage() {
                 </span>
               </div>
             ) : (
-              <div key={label as string}>
+              <div key={label as string} className="min-w-0">
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
-                <p className="text-sm font-medium dark:text-white">{value}</p>
+                <p className="text-sm font-medium dark:text-white break-all">{value}</p>
               </div>
             )
           )}

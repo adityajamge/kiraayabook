@@ -197,38 +197,41 @@ function BillContent({ data }: { data: BillData }) {
 }
 
 export function BillPreview({ data, onClose }: { data: BillData; onClose: () => void }) {
-  const billRef = useRef<HTMLDivElement>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const billRef  = useRef<HTMLDivElement>(null)
+  const zoomRef  = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
   const [scale, setScale] = useState(1)
-  const [scaledH, setScaledH] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     const update = () => {
-      if (!billRef.current) return
-      const available = window.innerWidth - 32 // 16px padding each side
-      const s = Math.min(1, available / 880)
-      setScale(s)
-      setScaledH(Math.ceil(billRef.current.scrollHeight * s))
+      const available = window.innerWidth - 32
+      setScale(Math.min(1, available / 880))
     }
-    const t = setTimeout(update, 50)
+    update()
     window.addEventListener('resize', update)
-    return () => { clearTimeout(t); window.removeEventListener('resize', update) }
+    return () => window.removeEventListener('resize', update)
   }, [])
 
   const captureJpeg = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
     const el = billRef.current
+    const zw = zoomRef.current
     if (!el) return null
-    const { default: html2canvas } = await import('html2canvas-pro')
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: CREAM,
-      logging: false,
-    })
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.96)
-    const blob = await (await fetch(dataUrl)).blob()
-    return { dataUrl, blob }
+    // Reset zoom so html2canvas captures at full 880px resolution
+    if (zw) zw.style.zoom = '1'
+    try {
+      const { default: html2canvas } = await import('html2canvas-pro')
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: CREAM,
+        logging: false,
+      })
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.96)
+      const blob = await (await fetch(dataUrl)).blob()
+      return { dataUrl, blob }
+    } finally {
+      if (zw) zw.style.zoom = String(scale)
+    }
   }
 
   const handleShare = async () => {
@@ -277,18 +280,18 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 overflow-y-auto px-4 py-4"
+      className="fixed inset-0 z-50 bg-black/70 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="mb-6">
+      <div className="flex flex-col items-center px-4 py-4 pb-8">
         {/* Toolbar */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 w-full" style={{ maxWidth: 880 * scale }}>
           <span className="text-white font-semibold text-sm">Bill Preview</span>
           <div className="flex items-center gap-2">
             <button
               onClick={handleShare}
               disabled={exporting}
-              className="flex items-center gap-1.5 bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-60"
+              className="flex items-center gap-1.5 bg-green-500 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-600 disabled:opacity-60"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
               Share
@@ -296,10 +299,10 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
             <button
               onClick={handlePdf}
               disabled={exporting}
-              className="flex items-center gap-1.5 bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 disabled:opacity-60"
+              className="flex items-center gap-1.5 bg-white text-black text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-100 disabled:opacity-60"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Save PDF
+              PDF
             </button>
             <button onClick={onClose} className="w-9 h-9 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center">
               <X className="w-4 h-4" />
@@ -307,15 +310,13 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
           </div>
         </div>
 
-        {/* Bill — scale wrapper fits mobile; billRef stays at true 880px for html2canvas */}
-        <div ref={wrapperRef} style={{ width: '100%', overflow: 'hidden', height: scaledH }}>
-          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 880 }}>
-            <div
-              ref={billRef}
-              style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}
-            >
-              <BillContent data={data} />
-            </div>
+        {/* zoom wrapper — affects layout so bill fits screen, reset before capture */}
+        <div ref={zoomRef} style={{ zoom: scale, width: 880 }}>
+          <div
+            ref={billRef}
+            style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}
+          >
+            <BillContent data={data} />
           </div>
         </div>
       </div>

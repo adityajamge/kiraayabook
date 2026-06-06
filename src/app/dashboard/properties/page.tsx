@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, MapPin, Building2, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, MapPin, Building2, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useT } from '@/lib/i18n'
@@ -10,13 +10,13 @@ type Property = {
   id: string
   name: string
   address: string | null
-  phone: string | null
+  phones: string[] | null
   room_count: number
   tenant_count: number
   created_at: string
 }
 
-const emptyForm = { name: '', address: '', phone: '' }
+const emptyForm = { name: '', address: '', phones: [''] }
 
 export default function PropertiesPage() {
   const t = useT()
@@ -46,8 +46,24 @@ export default function PropertiesPage() {
 
   function openEdit(p: Property) {
     setEditing(p)
-    setForm({ name: p.name, address: p.address ?? '', phone: p.phone ?? '' })
+    setForm({ name: p.name, address: p.address ?? '', phones: p.phones?.length ? p.phones : [''] })
     setDialogOpen(true)
+  }
+
+  function setPhone(index: number, value: string) {
+    setForm(f => {
+      const phones = [...f.phones]
+      phones[index] = value.replace(/\D/g, '').slice(0, 10)
+      return { ...f, phones }
+    })
+  }
+
+  function addPhone() {
+    setForm(f => ({ ...f, phones: [...f.phones, ''] }))
+  }
+
+  function removePhone(index: number) {
+    setForm(f => ({ ...f, phones: f.phones.filter((_, i) => i !== index) }))
   }
 
   async function handleSave() {
@@ -57,12 +73,13 @@ export default function PropertiesPage() {
     }
     setSaving(true)
     try {
+      const phones = form.phones.filter(p => p.trim().length > 0)
       const url    = editing ? `/api/properties/${editing.id}` : '/api/properties'
       const method = editing ? 'PATCH' : 'POST'
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name: form.name, address: form.address, phones: phones.length ? phones : null }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -111,14 +128,35 @@ export default function PropertiesPage() {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{t('properties.phone')}</label>
-        <input
-          value={form.phone}
-          onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
-          placeholder={t('properties.phonePlaceholder')}
-          inputMode="numeric"
-          maxLength={10}
-          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
-        />
+        <div className="space-y-2">
+          {form.phones.map((ph, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={ph}
+                onChange={e => setPhone(i, e.target.value)}
+                placeholder={t('properties.phonePlaceholder')}
+                inputMode="numeric"
+                maxLength={10}
+                className="flex-1 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+              />
+              {form.phones.length > 1 && (
+                <button
+                  onClick={() => removePhone(i)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={addPhone}
+            className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add another number
+          </button>
+        </div>
       </div>
       <div className="flex gap-2 pt-1">
         <button
@@ -182,8 +220,8 @@ export default function PropertiesPage() {
                 {p.address && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">{p.address}</p>
                 )}
-                {p.phone && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{p.phone}</p>
+                {p.phones && p.phones.length > 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{p.phones.join(' / ')}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2">
                   <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">

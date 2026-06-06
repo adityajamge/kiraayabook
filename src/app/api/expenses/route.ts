@@ -21,12 +21,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
+  if (!property_id)
+    return Response.json({ error: 'property_id is required' }, { status: 400 })
   const { description, amount, date } = await request.json()
   if (!description || !amount || !date)
     return Response.json({ error: 'description, amount and date are required' }, { status: 400 })
   const [row] = await db
     .insert(expenses)
-    .values({ org_id, property_id: property_id || null, description, amount: Number(amount), date })
+    .values({ org_id, property_id, description, amount: Number(amount), date })
     .returning()
   return Response.json(row, { status: 201 })
 }

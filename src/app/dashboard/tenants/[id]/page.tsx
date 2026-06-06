@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n'
 
 interface Tenant {
   id: string; name: string; phone: string; email: string | null
-  room_id: string; cot_number: string | null; move_in_date: string
+  room_id: string; property_id: string; cot_number: string | null; move_in_date: string
   move_out_date: string | null; status: string; rent_amount: number | null
 }
 interface Document { id: string; doc_type: string; file_url: string; uploaded_at: string }
@@ -22,8 +22,10 @@ interface RentRecord {
   payment_mode: string | null; status: string; bill_no: number
 }
 interface OrgSettings {
-  name: string; address: string | null; phone: string | null
   logo_url: string | null; bill_notes: string | null
+}
+interface Property {
+  id: string; name: string; address: string | null; phones: string[] | null
 }
 
 type EditForm = {
@@ -64,17 +66,19 @@ export default function TenantDetailPage() {
   const [saving, setSaving] = useState(false)
   const [rentRecords, setRentRecords] = useState<RentRecord[]>([])
   const [org, setOrg] = useState<OrgSettings | null>(null)
+  const [property, setProperty] = useState<Property | null>(null)
   const [billRecord, setBillRecord] = useState<RentRecord | null>(null)
 
   useEffect(() => { load() }, [id])
 
   const load = async () => {
-    const [tr, dr, rr, rentr, sr] = await Promise.all([
+    const [tr, dr, rr, rentr, sr, pr] = await Promise.all([
       fetch(`/api/tenants/${id}`),
       fetch(`/api/documents?tenant_id=${id}`),
       fetch('/api/rooms'),
       fetch(`/api/rent?tenant_id=${id}`),
       fetch('/api/settings'),
+      fetch('/api/properties'),
     ])
     const tenantData: Tenant = await tr.json()
     setTenant(tenantData)
@@ -83,14 +87,16 @@ export default function TenantDetailPage() {
     setRooms(await rr.json())
     setRentRecords(await rentr.json())
     setOrg(await sr.json())
+    const allProperties: Property[] = await pr.json()
+    setProperty(allProperties.find(p => p.id === tenantData.property_id) ?? null)
   }
 
   const buildBillData = (r: RentRecord): BillData | null => {
     if (!tenant || !org) return null
     return {
-      pgName:      org.name,
-      address:     org.address,
-      phone:       org.phone,
+      pgName:      property?.name    ?? 'Your PG',
+      address:     property?.address ?? null,
+      phones:      property?.phones  ?? null,
       logoUrl:     org.logo_url,
       billNotes:   org.bill_notes,
       billNo:      String(r.bill_no),

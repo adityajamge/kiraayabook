@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { documents, organisations } from '@/lib/db/schema'
+import { documents, organisations, tenants } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
@@ -107,6 +107,13 @@ export async function POST(request: Request) {
     return Response.json({ error: 'file, tenant_id, and doc_type are required' }, { status: 400 })
   }
 
+  const [tenant] = await db
+    .select({ property_id: tenants.property_id })
+    .from(tenants)
+    .where(and(eq(tenants.id, tenant_id), eq(tenants.org_id, org_id)))
+
+  if (!tenant) return Response.json({ error: 'Tenant not found.' }, { status: 404 })
+
   const needsRefresh = !org.google_token_expiry || org.google_token_expiry <= new Date()
   const accessToken  = needsRefresh
     ? await refreshAccessToken(org.id, org.google_refresh_token, org.google_client_id, org.google_client_secret)
@@ -116,7 +123,7 @@ export async function POST(request: Request) {
 
   const [doc] = await db
     .insert(documents)
-    .values({ org_id, tenant_id, doc_type, file_url })
+    .values({ org_id, property_id: tenant.property_id, tenant_id, doc_type, file_url })
     .returning()
 
   return Response.json(doc, { status: 201 })

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { tenants } from '@/lib/db/schema'
+import { tenants, rooms } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
@@ -37,6 +37,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Phone number must be exactly 10 digits.' }, { status: 400 })
   }
 
+  const [room] = await db
+    .select({ property_id: rooms.property_id })
+    .from(rooms)
+    .where(and(eq(rooms.id, room_id), eq(rooms.org_id, org_id)))
+
+  if (!room) {
+    return Response.json({ error: 'Room not found.' }, { status: 404 })
+  }
+
   const [existing] = await db
     .select({ id: tenants.id })
     .from(tenants)
@@ -50,7 +59,7 @@ export async function POST(request: Request) {
     .insert(tenants)
     .values({
       org_id,
-      property_id:   property_id || null,
+      property_id:   room.property_id,
       room_id,
       name,
       phone,

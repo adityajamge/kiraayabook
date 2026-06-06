@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { tenants } from '@/lib/db/schema'
+import { tenants, rooms } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
@@ -26,12 +26,22 @@ export async function PATCH(
   const org_id = await getOrgId(request)
   const { id } = await params
   const body = await request.json()
-  const normalized = {
+  const normalized: Record<string, unknown> = {
     ...body,
     email:         body.email || undefined,
     cot_number:    body.cot_number || undefined,
     move_out_date: body.move_out_date || undefined,
     rent_amount:   body.rent_amount ? Number(body.rent_amount) : undefined,
+  }
+
+  if (body.room_id) {
+    const [room] = await db
+      .select({ property_id: rooms.property_id })
+      .from(rooms)
+      .where(and(eq(rooms.id, body.room_id), eq(rooms.org_id, org_id)))
+
+    if (!room) return Response.json({ error: 'Room not found.' }, { status: 404 })
+    normalized.property_id = room.property_id
   }
 
   const [tenant] = await db

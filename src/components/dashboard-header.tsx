@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { MapPin, LogOut, Globe, Check, ChevronDown, Building2 } from 'lucide-react'
+import { MapPin, LogOut, Globe, Check, ChevronDown } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -87,22 +87,15 @@ export function DashboardHeader({
   return (
     <header className="hidden lg:flex h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 items-center justify-between px-4 lg:px-6 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 truncate">
-          <MapPin className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
-        </div>
-
-        {showPropertySwitcher && (
+        {showPropertySwitcher ? (
           <div ref={propRef} className="relative">
             <button
               onClick={() => setPropOpen(v => !v)}
-              className="flex items-center gap-1.5 text-sm font-medium border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
-              <Building2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="max-w-35 truncate">
-                {activeProperty?.name ?? ''}
-              </span>
-              <ChevronDown className="w-3 h-3 shrink-0" />
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
+              <ChevronDown className="w-3.5 h-3.5 shrink-0 text-gray-500 dark:text-gray-400" />
             </button>
             {propOpen && (
               <div className="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 min-w-48 z-50">
@@ -119,12 +112,10 @@ export function DashboardHeader({
               </div>
             )}
           </div>
-        )}
-
-        {!showPropertySwitcher && activeProperty && (
-          <div className="flex items-center gap-1.5 text-sm font-medium border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-3 py-1.5 rounded-lg">
-            <Building2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="max-w-35 truncate">{activeProperty.name}</span>
+        ) : (
+          <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 truncate">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
           </div>
         )}
       </div>

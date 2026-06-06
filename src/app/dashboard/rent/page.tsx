@@ -22,11 +22,17 @@ interface RentRecord {
   bill_no: number
 }
 interface OrgSettings {
-  name: string
-  address: string | null
-  phone: string | null
   logo_url: string | null
   bill_notes: string | null
+}
+interface Property {
+  id: string
+  name: string
+  address: string | null
+  phones: string[] | null
+}
+interface RentRecordWithProperty extends RentRecord {
+  property_id: string
 }
 
 function fmt(n: number) { return `₹${n.toLocaleString('en-IN')}` }
@@ -55,6 +61,7 @@ export default function RentPage() {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [org, setOrg] = useState<OrgSettings | null>(null)
+  const [properties, setProperties] = useState<Property[]>([])
   const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7))
   const [loading, setLoading] = useState(true)
   const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null)
@@ -63,9 +70,9 @@ export default function RentPage() {
   const [billRecord, setBillRecord] = useState<RentRecord | null>(null)
 
   useEffect(() => {
-    Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings')])
-      .then(([tr, rr, sr]) => Promise.all([tr.json(), rr.json(), sr.json()]))
-      .then(([tn, r, s]) => { setTenants(tn); setRooms(r); setOrg(s) })
+    Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings'), fetch('/api/properties')])
+      .then(([tr, rr, sr, pr]) => Promise.all([tr.json(), rr.json(), sr.json(), pr.json()]))
+      .then(([tn, r, s, p]) => { setTenants(tn); setRooms(r); setOrg(s); setProperties(p) })
   }, [])
 
   useEffect(() => { loadRecords() }, [monthFilter])
@@ -103,12 +110,13 @@ export default function RentPage() {
   const buildBillData = (r: RentRecord): BillData | null => {
     const tenant = tenantMap[r.tenant_id]
     if (!tenant) return null
+    const property = properties.find(p => p.id === (r as RentRecordWithProperty).property_id)
     return {
-      pgName:      org?.name       ?? 'Your PG',
-      address:     org?.address    ?? null,
-      phone:       org?.phone      ?? null,
-      logoUrl:     org?.logo_url   ?? null,
-      billNotes:   org?.bill_notes ?? null,
+      pgName:      property?.name    ?? 'Your PG',
+      address:     property?.address ?? null,
+      phones:      property?.phones  ?? null,
+      logoUrl:     org?.logo_url     ?? null,
+      billNotes:   org?.bill_notes   ?? null,
       billNo:      String(r.bill_no),
       date:        r.paid_date ?? new Date().toISOString().slice(0, 10),
       tenantName:  tenant.name,

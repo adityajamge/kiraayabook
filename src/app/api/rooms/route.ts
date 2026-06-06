@@ -33,13 +33,17 @@ export async function POST(request: Request) {
 
   const { room_number, capacity, floor, type } = body
 
+  if (!property_id) {
+    return Response.json({ error: 'property_id is required' }, { status: 400 })
+  }
+
   if (!room_number || !capacity) {
     return Response.json({ error: 'room_number and capacity are required' }, { status: 400 })
   }
 
   const [room] = await db
     .insert(rooms)
-    .values({ org_id, property_id: property_id || null, room_number, capacity, floor, type })
+    .values({ org_id, property_id, room_number, capacity, floor, type })
     .returning()
 
   return Response.json(room, { status: 201 })

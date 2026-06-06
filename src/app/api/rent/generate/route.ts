@@ -45,6 +45,7 @@ export async function POST(request: Request) {
     if (!existing) {
       await db.insert(rent_records).values({
         org_id,
+        property_id:  tenant.property_id,
         tenant_id:    tenant.id,
         amount:       tenant.rent_amount,
         period_start,

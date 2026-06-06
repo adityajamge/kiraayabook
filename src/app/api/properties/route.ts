@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
   const rows = await db.execute(sql`
     SELECT
-      p.id, p.name, p.address, p.phone, p.created_at,
+      p.id, p.name, p.address, p.phones, p.created_at,
       COUNT(DISTINCT r.id)::int  AS room_count,
       COUNT(DISTINCT t.id)::int  AS tenant_count
     FROM properties p
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const org_id = await getOrgId(request)
-  const { name, address, phone } = await request.json()
+  const { name, address, phones } = await request.json()
 
   if (!name?.trim()) {
     return Response.json({ error: 'name is required' }, { status: 400 })
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   const [property] = await db
     .insert(properties)
-    .values({ org_id, name: name.trim(), address: address || null, phone: phone || null })
+    .values({ org_id, name: name.trim(), address: address || null, phones: Array.isArray(phones) ? phones : null })
     .returning()
 
   return Response.json(property, { status: 201 })

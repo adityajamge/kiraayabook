@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   const org_id = await getOrgId(request)
   const { id } = await params
-  const { name, address, phone } = await request.json()
+  const { name, address, phones } = await request.json()
 
   if (!name?.trim()) {
     return Response.json({ error: 'name is required' }, { status: 400 })
@@ -17,7 +17,7 @@ export async function PATCH(
 
   const [property] = await db
     .update(properties)
-    .set({ name: name.trim(), address: address || null, phone: phone || null })
+    .set({ name: name.trim(), address: address || null, phones: Array.isArray(phones) ? phones : null })
     .where(and(eq(properties.id, id), eq(properties.org_id, org_id)))
     .returning()
 

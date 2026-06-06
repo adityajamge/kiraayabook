@@ -7,7 +7,7 @@ import { useT } from '@/lib/i18n'
 export interface BillData {
   pgName: string
   address: string | null
-  phone: string | null
+  phones: string[] | null
   logoUrl: string | null
   billNotes: string | null
   billNo: string
@@ -123,7 +123,11 @@ function BillContent({ data }: { data: BillData }) {
         gap: 12, flexWrap: 'wrap',
       }}>
         <span>{data.address ?? ''}</span>
-        {data.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('bill.mob')} {data.phone}</span>}
+        {data.phones && data.phones.length > 0 && (
+          <span style={{ whiteSpace: 'nowrap' }}>
+            {t('bill.mob')} {data.phones.join(' / ')}
+          </span>
+        )}
       </div>
 
       {/* Body — two columns */}

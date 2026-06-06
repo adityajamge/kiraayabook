@@ -146,7 +146,7 @@ export function BottomNav({
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>
 
-            {/* Property switcher */}
+            {/* Property switcher — only shown when owner has multiple properties */}
             {properties.length > 1 && (
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-3 px-1 mb-3">
@@ -154,18 +154,6 @@ export function BottomNav({
                   <span className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('properties.title')}</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <button
-                    onClick={() => selectProperty(null)}
-                    className={cn(
-                      'flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                      currentPropertyId === null
-                        ? 'bg-black dark:bg-white text-white dark:text-black'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    )}
-                  >
-                    {t('properties.allProperties')}
-                    {currentPropertyId === null && <Check className="w-3.5 h-3.5" />}
-                  </button>
                   {properties.map(p => (
                     <button
                       key={p.id}

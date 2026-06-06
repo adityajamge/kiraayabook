@@ -19,11 +19,13 @@ export function DashboardHeader({
   language,
   properties = [],
   activePropertyId = null,
+  cookieSet = true,
 }: {
   orgName: string
   language: string
   properties?: PropertyItem[]
   activePropertyId?: string | null
+  cookieSet?: boolean
 }) {
   const t = useT()
   const router = useRouter()
@@ -31,6 +33,18 @@ export function DashboardHeader({
   const [propOpen, setPropOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
   const propRef = useRef<HTMLDivElement>(null)
+
+  // Auto-sync cookie on first load when no property was previously selected
+  useEffect(() => {
+    if (!cookieSet && activePropertyId) {
+      fetch('/api/auth/select-property', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ property_id: activePropertyId }),
+      }).then(() => router.refresh())
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -68,7 +82,7 @@ export function DashboardHeader({
   }
 
   const activeProperty = properties.find(p => p.id === activePropertyId)
-  const showPropertySwitcher = properties.length > 0
+  const showPropertySwitcher = properties.length > 1
 
   return (
     <header className="hidden lg:flex h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 items-center justify-between px-4 lg:px-6 shrink-0">
@@ -82,29 +96,16 @@ export function DashboardHeader({
           <div ref={propRef} className="relative">
             <button
               onClick={() => setPropOpen(v => !v)}
-              className={cn(
-                'flex items-center gap-1.5 text-sm font-medium border px-3 py-1.5 rounded-lg transition-colors',
-                activeProperty
-                  ? 'border-black dark:border-white bg-black dark:bg-white text-white dark:text-black'
-                  : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-              )}
+              className="flex items-center gap-1.5 text-sm font-medium border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-3 py-1.5 rounded-lg transition-colors"
             >
               <Building2 className="w-3.5 h-3.5 shrink-0" />
               <span className="max-w-35 truncate">
-                {activeProperty ? activeProperty.name : t('properties.allProperties')}
+                {activeProperty?.name ?? ''}
               </span>
               <ChevronDown className="w-3 h-3 shrink-0" />
             </button>
             {propOpen && (
               <div className="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 min-w-48 z-50">
-                <button
-                  onClick={() => selectProperty(null)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-200"
-                >
-                  {t('properties.allProperties')}
-                  {!activePropertyId && <Check className="w-3.5 h-3.5 text-black dark:text-white" />}
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2 my-1" />
                 {properties.map(p => (
                   <button
                     key={p.id}
@@ -117,6 +118,13 @@ export function DashboardHeader({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {!showPropertySwitcher && activeProperty && (
+          <div className="flex items-center gap-1.5 text-sm font-medium border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-3 py-1.5 rounded-lg">
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="max-w-35 truncate">{activeProperty.name}</span>
           </div>
         )}
       </div>

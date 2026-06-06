@@ -69,6 +69,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Load properties for the owner's property switcher
   let propertyList: PropertyItem[] = []
   let activePropertyId: string | null = null
+  let cookieSet = false
 
   if (payload.role === 'owner') {
     const props = await db
@@ -89,6 +90,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         redirect('/dashboard/properties')
       }
     }
+    // Default to first property if none selected (cookie not yet set)
+    cookieSet = !!activePropertyId
+    if (!activePropertyId && props.length > 0) {
+      activePropertyId = props[0].id
+    }
   }
 
   return (
@@ -102,6 +108,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             language={language}
             properties={propertyList}
             activePropertyId={activePropertyId}
+            cookieSet={cookieSet}
           />
           <main className="flex-1 overflow-auto bg-white dark:bg-gray-950 lg:bg-gray-50 p-4 lg:p-6 pb-24 lg:pb-6">
             {children}

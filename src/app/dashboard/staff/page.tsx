@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, UserCog, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useT } from '@/lib/i18n'
 
 type StaffMember = {
@@ -116,19 +112,98 @@ export default function StaffPage() {
     load()
   }
 
+  const formContent = (
+    <div className="space-y-3 mt-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('staff.name')} <span className="text-red-500">*</span></label>
+          <input
+            value={form.name}
+            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            placeholder={t('staff.namePlaceholder')}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('staff.email')} <span className="text-red-500">*</span></label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+            placeholder={t('staff.emailPlaceholder')}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('staff.password')} {!editing && <span className="text-red-500">*</span>}</label>
+        <input
+          type="password"
+          value={form.password}
+          onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+          placeholder={editing ? t('staff.passwordEditHint') : t('staff.passwordPlaceholder')}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('staff.role')} <span className="text-red-500">*</span></label>
+          <select
+            value={form.staff_role}
+            onChange={e => setForm(f => ({ ...f, staff_role: e.target.value }))}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white"
+          >
+            <option value="manager">{t('staff.roleManager')}</option>
+            <option value="staff">{t('staff.roleStaff')}</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('staff.property')}</label>
+          <select
+            value={form.property_id || 'all'}
+            onChange={e => setForm(f => ({ ...f, property_id: e.target.value === 'all' ? '' : e.target.value }))}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white"
+          >
+            <option value="all">{t('staff.propertyAll')}</option>
+            {properties.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={() => setDialogOpen(false)}
+          className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {t('common.cancel')}
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+        >
+          {saving ? t('staff.saving') : t('staff.save')}
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('staff.title')}</h1>
+          <h1 className="text-2xl font-bold dark:text-white">{t('staff.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('staff.subtitle')}</p>
         </div>
-        <Button onClick={openAdd} size="sm" className="gap-1.5">
+        <button
+          onClick={openAdd}
+          className="hidden sm:flex items-center gap-1.5 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('staff.addStaff')}</span>
-          <span className="sm:hidden">{t('common.add')}</span>
-        </Button>
+          {t('staff.addStaff')}
+        </button>
       </div>
 
       {/* List */}
@@ -148,7 +223,7 @@ export default function StaffPage() {
           {staffList.map(s => (
             <div
               key={s.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4"
+              className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4 shadow-sm"
             >
               <div className="w-11 h-11 bg-purple-50 dark:bg-purple-900/30 rounded-xl flex items-center justify-center shrink-0">
                 <UserCog className="w-5 h-5 text-purple-500" />
@@ -189,76 +264,21 @@ export default function StaffPage() {
         </div>
       )}
 
+      {/* Mobile FAB */}
+      <button
+        onClick={openAdd}
+        className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed bottom-24 right-4 z-40 sm:hidden"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
       {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? t('staff.editStaff') : t('staff.addStaff')}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <Label>{t('staff.name')} *</Label>
-              <Input
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder={t('staff.namePlaceholder')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('staff.email')} *</Label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                placeholder={t('staff.emailPlaceholder')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('staff.password')} {editing ? '' : '*'}</Label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder={editing ? t('staff.passwordEditHint') : t('staff.passwordPlaceholder')}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t('staff.role')} *</Label>
-                <Select value={form.staff_role} onValueChange={v => setForm(f => ({ ...f, staff_role: v }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manager">{t('staff.roleManager')}</SelectItem>
-                    <SelectItem value="staff">{t('staff.roleStaff')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t('staff.property')}</Label>
-                <Select value={form.property_id || 'all'} onValueChange={v => setForm(f => ({ ...f, property_id: v === 'all' ? '' : v }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('staff.propertyAll')}</SelectItem>
-                    {properties.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving ? t('staff.saving') : t('staff.save')}
-              </Button>
-            </div>
-          </div>
+          {formContent}
         </DialogContent>
       </Dialog>
 
@@ -272,12 +292,18 @@ export default function StaffPage() {
             This will permanently remove the staff member. They will no longer be able to log in.
           </p>
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setDeleteId(null)}>
+            <button
+              onClick={() => setDeleteId(null)}
+              className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
               {t('common.cancel')}
-            </Button>
-            <Button variant="destructive" className="flex-1" onClick={() => deleteId && handleDelete(deleteId)}>
+            </button>
+            <button
+              onClick={() => deleteId && handleDelete(deleteId)}
+              className="flex-1 bg-red-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-red-700"
+            >
               {t('common.delete')}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

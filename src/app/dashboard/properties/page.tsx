@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, MapPin, Building2, Users } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useT } from '@/lib/i18n'
 
@@ -60,7 +57,7 @@ export default function PropertiesPage() {
     }
     setSaving(true)
     try {
-      const url = editing ? `/api/properties/${editing.id}` : '/api/properties'
+      const url    = editing ? `/api/properties/${editing.id}` : '/api/properties'
       const method = editing ? 'PATCH' : 'POST'
       const res = await fetch(url, {
         method,
@@ -92,19 +89,70 @@ export default function PropertiesPage() {
     load()
   }
 
+  const formContent = (
+    <div className="space-y-3 mt-2">
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('properties.name')} <span className="text-red-500">*</span></label>
+        <input
+          value={form.name}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          placeholder={t('properties.namePlaceholder')}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('properties.address')}</label>
+        <input
+          value={form.address}
+          onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+          placeholder={t('properties.addressPlaceholder')}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('properties.phone')}</label>
+        <input
+          value={form.phone}
+          onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+          placeholder={t('properties.phonePlaceholder')}
+          inputMode="numeric"
+          maxLength={10}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={() => setDialogOpen(false)}
+          className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {t('common.cancel')}
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+        >
+          {saving ? t('properties.saving') : t('properties.save')}
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('properties.title')}</h1>
+          <h1 className="text-2xl font-bold dark:text-white">{t('properties.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('properties.subtitle')}</p>
         </div>
-        <Button onClick={openAdd} size="sm" className="gap-1.5">
+        <button
+          onClick={openAdd}
+          className="hidden sm:flex items-center gap-1.5 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('properties.addProperty')}</span>
-          <span className="sm:hidden">{t('common.add')}</span>
-        </Button>
+          {t('properties.addProperty')}
+        </button>
       </div>
 
       {/* List */}
@@ -124,7 +172,7 @@ export default function PropertiesPage() {
           {properties.map(p => (
             <div
               key={p.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-4"
+              className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-4 shadow-sm"
             >
               <div className="w-11 h-11 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center shrink-0">
                 <MapPin className="w-5 h-5 text-blue-500" />
@@ -167,48 +215,21 @@ export default function PropertiesPage() {
         </div>
       )}
 
+      {/* Mobile FAB */}
+      <button
+        onClick={openAdd}
+        className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed bottom-24 right-4 z-40 sm:hidden"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
       {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? t('properties.editProperty') : t('properties.addProperty')}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <Label>{t('properties.name')} *</Label>
-              <Input
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder={t('properties.namePlaceholder')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('properties.address')}</Label>
-              <Input
-                value={form.address}
-                onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                placeholder={t('properties.addressPlaceholder')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('properties.phone')}</Label>
-              <Input
-                value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                placeholder={t('properties.phonePlaceholder')}
-                inputMode="numeric"
-                maxLength={10}
-              />
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving ? t('properties.saving') : t('properties.save')}
-              </Button>
-            </div>
-          </div>
+          {formContent}
         </DialogContent>
       </Dialog>
 
@@ -222,12 +243,18 @@ export default function PropertiesPage() {
             This will permanently delete the property. Rooms and tenants linked to it will remain but lose their property association.
           </p>
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setDeleteId(null)}>
+            <button
+              onClick={() => setDeleteId(null)}
+              className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
               {t('common.cancel')}
-            </Button>
-            <Button variant="destructive" className="flex-1" onClick={() => deleteId && handleDelete(deleteId)}>
+            </button>
+            <button
+              onClick={() => deleteId && handleDelete(deleteId)}
+              className="flex-1 bg-red-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-red-700"
+            >
               {t('common.delete')}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

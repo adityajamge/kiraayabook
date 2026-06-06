@@ -13,6 +13,15 @@ export async function proxy(request: NextRequest) {
   headers.set('x-org-id', payload.org_id)
   headers.set('x-user-id', payload.user_id)
   headers.set('x-user-role', payload.role)
+
+  // Owner: use the property selected via cookie; staff: use property locked in JWT
+  if (payload.role === 'owner') {
+    const propertyId = request.cookies.get('kiraayabook_property')?.value
+    if (propertyId) headers.set('x-property-id', propertyId)
+  } else if (payload.property_id) {
+    headers.set('x-property-id', payload.property_id)
+  }
+
   return NextResponse.next({ request: { headers } })
 }
 

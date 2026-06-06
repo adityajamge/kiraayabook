@@ -30,12 +30,16 @@ export async function getOrgId(req: Request): Promise<string> {
   return payload.org_id
 }
 
+export function getPropertyId(req: Request): string | null {
+  return req.headers.get('x-property-id')
+}
+
 export async function getAuthContext(req: Request): Promise<JwtPayload> {
   const org_id = req.headers.get('x-org-id')
   const user_id = req.headers.get('x-user-id')
   const role = req.headers.get('x-user-role')
   if (org_id && user_id && role) {
-    return { org_id, user_id, role }
+    return { org_id, user_id, role, property_id: req.headers.get('x-property-id') }
   }
 
   const payload = await getJwtPayload(req)

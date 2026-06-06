@@ -20,11 +20,22 @@ export const organisations = pgTable('organisations', {
   created_at:             timestamp('created_at').defaultNow(),
 })
 
+export const properties = pgTable('properties', {
+  id:         uuid('id').defaultRandom().primaryKey(),
+  org_id:     uuid('org_id').notNull().references(() => organisations.id),
+  name:       text('name').notNull(),
+  address:    text('address'),
+  phone:      text('phone'),
+  created_at: timestamp('created_at').defaultNow(),
+})
+
 export const users = pgTable('users', {
   id:            uuid('id').defaultRandom().primaryKey(),
   org_id:        uuid('org_id').notNull().references(() => organisations.id),
+  property_id:   uuid('property_id').references(() => properties.id),
   email:         text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
+  name:          text('name'),
   role:          text('role').notNull().default('owner'),
   created_at:    timestamp('created_at').defaultNow(),
 })
@@ -32,6 +43,7 @@ export const users = pgTable('users', {
 export const rooms = pgTable('rooms', {
   id:          uuid('id').defaultRandom().primaryKey(),
   org_id:      uuid('org_id').notNull().references(() => organisations.id),
+  property_id: uuid('property_id').references(() => properties.id),
   room_number: text('room_number').notNull(),
   capacity:    integer('capacity').notNull(),
   floor:       text('floor'),
@@ -42,6 +54,7 @@ export const rooms = pgTable('rooms', {
 export const tenants = pgTable('tenants', {
   id:            uuid('id').defaultRandom().primaryKey(),
   org_id:        uuid('org_id').notNull().references(() => organisations.id),
+  property_id:   uuid('property_id').references(() => properties.id),
   room_id:       uuid('room_id').notNull().references(() => rooms.id),
   name:          text('name').notNull(),
   phone:         text('phone').notNull(),
@@ -57,6 +70,7 @@ export const tenants = pgTable('tenants', {
 export const rent_records = pgTable('rent_records', {
   id:           uuid('id').defaultRandom().primaryKey(),
   org_id:       uuid('org_id').notNull().references(() => organisations.id),
+  property_id:  uuid('property_id').references(() => properties.id),
   tenant_id:    uuid('tenant_id').notNull().references(() => tenants.id),
   amount:       integer('amount').notNull(),
   period_start: date('period_start').notNull(),
@@ -77,6 +91,7 @@ export const platform_config = pgTable('platform_config', {
 export const documents = pgTable('documents', {
   id:          uuid('id').defaultRandom().primaryKey(),
   org_id:      uuid('org_id').notNull().references(() => organisations.id),
+  property_id: uuid('property_id').references(() => properties.id),
   tenant_id:   uuid('tenant_id').notNull().references(() => tenants.id),
   doc_type:    text('doc_type').notNull(),
   file_url:    text('file_url').notNull(),
@@ -86,6 +101,7 @@ export const documents = pgTable('documents', {
 export const expenses = pgTable('expenses', {
   id:          uuid('id').defaultRandom().primaryKey(),
   org_id:      uuid('org_id').notNull().references(() => organisations.id),
+  property_id: uuid('property_id').references(() => properties.id),
   description: text('description').notNull(),
   amount:      integer('amount').notNull(),
   date:        date('date').notNull(),

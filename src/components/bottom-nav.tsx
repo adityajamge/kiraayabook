@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight, Globe } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight, Globe, MapPin, UserCog } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useT } from '@/lib/i18n'
@@ -28,7 +28,7 @@ export function BottomNav({ language }: { language: string }) {
   const [open, setOpen] = useState(false)
   const [currentLang, setCurrentLang] = useState(language)
 
-  const moreActive = pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/expenses')
+  const moreActive = pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/expenses') || pathname.startsWith('/dashboard/properties') || pathname.startsWith('/dashboard/staff')
 
   const changeLanguage = async (lang: string) => {
     setCurrentLang(lang)
@@ -95,6 +95,32 @@ export function BottomNav({ language }: { language: string }) {
                   <Receipt className="w-5 h-5 text-red-500" />
                 </div>
                 <span className="font-semibold text-[15px] dark:text-white">{t('nav.expenses')}</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </Link>
+            <Link
+              href="/dashboard/properties"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 mb-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-blue-500" />
+                </div>
+                <span className="font-semibold text-[15px] dark:text-white">{t('nav.properties')}</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </Link>
+            <Link
+              href="/dashboard/staff"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 mb-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center">
+                  <UserCog className="w-5 h-5 text-purple-500" />
+                </div>
+                <span className="font-semibold text-[15px] dark:text-white">{t('nav.staff')}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>

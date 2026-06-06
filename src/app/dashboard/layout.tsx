@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { organisations } from '@/lib/db/schema'
+import { organisations, properties } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { Sidebar } from '@/components/sidebar'
 import { DashboardHeader } from '@/components/dashboard-header'
@@ -20,6 +20,11 @@ type OrgData = {
   logo_url: string | null
   dark_mode: boolean
   language: string
+}
+
+type PropertyItem = {
+  id: string
+  name: string
 }
 
 const allMessages: Record<string, typeof enMessages> = {
@@ -61,13 +66,36 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const language = org?.language ?? 'en'
   const messages = allMessages[language] ?? enMessages
 
+  // Load properties for the owner's property switcher
+  let propertyList: PropertyItem[] = []
+  let activePropertyId: string | null = null
+
+  if (payload.role === 'owner') {
+    const props = await db
+      .select({ id: properties.id, name: properties.name })
+      .from(properties)
+      .where(eq(properties.org_id, payload.org_id))
+      .orderBy(properties.created_at)
+    propertyList = props
+    activePropertyId = cookieStore.get('kiraayabook_property')?.value ?? null
+    // Clear stale cookie if property was deleted
+    if (activePropertyId && !props.find(p => p.id === activePropertyId)) {
+      activePropertyId = null
+    }
+  }
+
   return (
     <LanguageProvider messages={messages}>
       <div className="flex h-screen overflow-hidden">
         <DarkModeInit dark={darkMode} />
         <Sidebar orgName={orgName} logoUrl={logoUrl} />
         <div className="flex-1 flex flex-col min-w-0">
-          <DashboardHeader orgName={orgName} language={language} />
+          <DashboardHeader
+            orgName={orgName}
+            language={language}
+            properties={propertyList}
+            activePropertyId={activePropertyId}
+          />
           <main className="flex-1 overflow-auto bg-white dark:bg-gray-950 lg:bg-gray-50 p-4 lg:p-6 pb-24 lg:pb-6">
             {children}
           </main>

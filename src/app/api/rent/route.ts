@@ -1,12 +1,15 @@
 import { db } from '@/lib/db'
 import { rent_records } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
-import { eq, sql } from 'drizzle-orm'
+import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { eq, and, sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month')
+
+  const propertyFilter = property_id ? sql` AND property_id = ${property_id}` : sql``
 
   if (month) {
     const result = await db.execute(sql`
@@ -16,7 +19,7 @@ export async function GET(request: Request) {
         COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
         COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
       FROM rent_records
-      WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month}
+      WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month} ${propertyFilter}
     `)
     const rows = Array.isArray(result) ? result : result?.rows ?? []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,14 +28,14 @@ export async function GET(request: Request) {
 
   const tenant_id = searchParams.get('tenant_id')
 
+  const conditions = [eq(rent_records.org_id, org_id)]
+  if (tenant_id) conditions.push(eq(rent_records.tenant_id, tenant_id))
+  if (property_id) conditions.push(eq(rent_records.property_id, property_id))
+
   const rows = await db
     .select()
     .from(rent_records)
-    .where(
-      tenant_id
-        ? sql`org_id = ${org_id} AND tenant_id = ${tenant_id}`
-        : eq(rent_records.org_id, org_id)
-    )
+    .where(and(...conditions))
     .orderBy(rent_records.due_date)
 
   return Response.json(rows)
@@ -40,6 +43,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const body = await request.json()
 
   const { tenant_id, amount, period_start, period_end, due_date, payment_mode } = body
@@ -48,16 +52,17 @@ export async function POST(request: Request) {
     return Response.json({ error: 'tenant_id, amount, period_start, period_end, and due_date are required' }, { status: 400 })
   }
 
-  // Get the next bill_no for this org (max existing + 1)
+  const propertyFilter = property_id ? sql` AND property_id = ${property_id}` : sql``
+
   const maxResult = await db.execute(sql`
-    SELECT COALESCE(MAX(bill_no), 0) AS max_bill_no FROM rent_records WHERE org_id = ${org_id}
+    SELECT COALESCE(MAX(bill_no), 0) AS max_bill_no FROM rent_records WHERE org_id = ${org_id} ${propertyFilter}
   `)
   const rows = Array.isArray(maxResult) ? maxResult : (maxResult?.rows ?? [])
   const max_bill_no = Number((rows[0] as Record<string, unknown>)?.max_bill_no ?? 0)
 
   const [record] = await db
     .insert(rent_records)
-    .values({ org_id, tenant_id, amount, period_start, period_end, due_date, payment_mode, bill_no: max_bill_no + 1 })
+    .values({ org_id, property_id: property_id || null, tenant_id, amount, period_start, period_end, due_date, payment_mode, bill_no: max_bill_no + 1 })
     .returning()
 
   return Response.json(record, { status: 201 })

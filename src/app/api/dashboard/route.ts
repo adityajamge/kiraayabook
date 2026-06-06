@@ -1,9 +1,10 @@
 import { db } from '@/lib/db'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month') ?? new Date().toISOString().slice(0, 7)
 
@@ -12,6 +13,9 @@ export async function GET(request: Request) {
     const maybeRows = (result as { rows?: T[] } | null)?.rows
     return Array.isArray(maybeRows) ? maybeRows : []
   }
+
+  const pf = property_id ? sql` AND r.property_id = ${property_id}` : sql``
+  const pfT = property_id ? sql` AND property_id = ${property_id}` : sql``
 
   const roomStatsRows = rowsOf<{ total_rooms: number; total_capacity: number; total_occupied: number }>(
     await db.execute(sql`
@@ -23,10 +27,10 @@ export async function GET(request: Request) {
     LEFT JOIN (
       SELECT room_id, COUNT(*)::int AS cnt
       FROM tenants
-      WHERE org_id = ${org_id} AND status = 'active'
+      WHERE org_id = ${org_id} AND status = 'active' ${pfT}
       GROUP BY room_id
     ) occ ON occ.room_id = r.id
-    WHERE r.org_id = ${org_id}
+    WHERE r.org_id = ${org_id} ${pf}
   `)
   )
 
@@ -36,7 +40,7 @@ export async function GET(request: Request) {
       COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
       COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
     FROM rent_records
-    WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month}
+    WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month} ${pfT}
   `)
   )
 
@@ -56,7 +60,7 @@ export async function GET(request: Request) {
     FROM rent_records rr
     JOIN tenants t ON t.id = rr.tenant_id
     JOIN rooms r   ON r.id  = t.room_id
-    WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending'
+    WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending' ${pfT}
     ORDER BY rr.amount DESC
   `)
   )
@@ -74,10 +78,10 @@ export async function GET(request: Request) {
     LEFT JOIN (
       SELECT room_id, COUNT(*)::int AS cnt
       FROM tenants
-      WHERE org_id = ${org_id} AND status = 'active'
+      WHERE org_id = ${org_id} AND status = 'active' ${pfT}
       GROUP BY room_id
     ) occ ON occ.room_id = r.id
-    WHERE r.org_id = ${org_id}
+    WHERE r.org_id = ${org_id} ${pf}
       AND (r.capacity - COALESCE(occ.cnt, 0)) > 0
     ORDER BY r.room_number
   `)
@@ -87,7 +91,7 @@ export async function GET(request: Request) {
     await db.execute(sql`
     SELECT COALESCE(SUM(amount), 0)::int AS total
     FROM expenses
-    WHERE org_id = ${org_id} AND TO_CHAR(date, 'YYYY-MM') = ${month}
+    WHERE org_id = ${org_id} AND TO_CHAR(date, 'YYYY-MM') = ${month} ${pfT}
   `)
   )
 

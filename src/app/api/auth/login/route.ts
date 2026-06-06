@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     user_id: user.id,
     org_id: user.org_id,
     role: user.role,
+    property_id: user.property_id,
   })
 
   const response = NextResponse.json({ ok: true })

@@ -4,6 +4,7 @@ export interface JwtPayload {
   user_id: string
   org_id: string
   role: string
+  property_id?: string | null
 }
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!)

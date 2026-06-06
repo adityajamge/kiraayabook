@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { organisations, properties } from '@/lib/db/schema'
@@ -82,6 +82,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (activePropertyId && !props.find(p => p.id === activePropertyId)) {
       activePropertyId = null
     }
+    // Guard: owner has no properties — send them to set one up
+    if (props.length === 0) {
+      const pathname = (await headers()).get('x-pathname') ?? ''
+      if (!pathname.startsWith('/dashboard/properties')) {
+        redirect('/dashboard/properties')
+      }
+    }
   }
 
   return (
@@ -100,7 +107,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {children}
           </main>
         </div>
-        <BottomNav language={language} />
+        <BottomNav language={language} properties={propertyList} activePropertyId={activePropertyId} />
         <Toaster />
       </div>
     </LanguageProvider>

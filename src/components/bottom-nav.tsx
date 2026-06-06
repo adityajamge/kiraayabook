@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight, Globe, MapPin, UserCog } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight, Globe, MapPin, UserCog, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useT } from '@/lib/i18n'
@@ -21,12 +21,23 @@ const LANGS = [
   { code: 'hi', label: 'हिंदी' },
 ]
 
-export function BottomNav({ language }: { language: string }) {
+type PropertyItem = { id: string; name: string }
+
+export function BottomNav({
+  language,
+  properties = [],
+  activePropertyId = null,
+}: {
+  language: string
+  properties?: PropertyItem[]
+  activePropertyId?: string | null
+}) {
   const t = useT()
   const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [currentLang, setCurrentLang] = useState(language)
+  const [currentPropertyId, setCurrentPropertyId] = useState(activePropertyId)
 
   const moreActive = pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/expenses') || pathname.startsWith('/dashboard/properties') || pathname.startsWith('/dashboard/staff')
 
@@ -36,6 +47,16 @@ export function BottomNav({ language }: { language: string }) {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ language: lang }),
+    })
+    router.refresh()
+  }
+
+  const selectProperty = async (property_id: string | null) => {
+    setCurrentPropertyId(property_id)
+    await fetch('/api/auth/select-property', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property_id }),
     })
     router.refresh()
   }
@@ -137,6 +158,45 @@ export function BottomNav({ language }: { language: string }) {
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>
+
+            {/* Property switcher */}
+            {properties.length > 1 && (
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-3 px-1 mb-3">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('properties.title')}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => selectProperty(null)}
+                    className={cn(
+                      'flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                      currentPropertyId === null
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    )}
+                  >
+                    {t('properties.allProperties')}
+                    {currentPropertyId === null && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                  {properties.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => selectProperty(p.id)}
+                      className={cn(
+                        'flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                        currentPropertyId === p.id
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                      )}
+                    >
+                      <span className="truncate">{p.name}</span>
+                      {currentPropertyId === p.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Language switcher */}
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">

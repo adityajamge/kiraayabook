@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 import * as schema from '../src/lib/db/schema'
-import { organisations, users } from '../src/lib/db/schema'
+import { organisations, users, properties } from '../src/lib/db/schema'
 import bcrypt from 'bcryptjs'
 import * as readline from 'readline'
 
@@ -44,6 +44,16 @@ async function main() {
     process.exit(1)
   }
 
+  console.log('\n── First Property ──\n')
+  const propName    = await ask('Property name    (e.g. Nathkrupa PG - Kothrud): ')
+  const propAddress = await ask('Property address (optional, press Enter to skip): ')
+
+  if (!propName.trim()) {
+    console.error('\nProperty name is required.')
+    process.exit(1)
+  }
+
+  console.log('\n── Owner Account ──\n')
   const email     = await ask('Owner email:   ')
   const password  = await ask('Password:      ')
 
@@ -58,6 +68,15 @@ async function main() {
     })
     .returning()
 
+  const [property] = await db
+    .insert(properties)
+    .values({
+      org_id:  org.id,
+      name:    propName.trim(),
+      address: propAddress.trim() || null,
+    })
+    .returning()
+
   await db.insert(users).values({
     org_id:        org.id,
     email,
@@ -66,10 +85,11 @@ async function main() {
   })
 
   console.log(`\n✓ Done!`)
-  console.log(`  Org ID:    ${org.id}`)
-  console.log(`  Domain:    ${domain}`)
-  console.log(`  PWA name:  ${pgName}`)
-  console.log(`  Login:     ${email}\n`)
+  console.log(`  Org ID:      ${org.id}`)
+  console.log(`  Property ID: ${property.id}`)
+  console.log(`  Domain:      ${domain}`)
+  console.log(`  PWA name:    ${pgName}`)
+  console.log(`  Login:       ${email}\n`)
 
   rl.close()
   process.exit(0)

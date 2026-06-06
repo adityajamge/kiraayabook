@@ -13,6 +13,7 @@ export async function proxy(request: NextRequest) {
   headers.set('x-org-id', payload.org_id)
   headers.set('x-user-id', payload.user_id)
   headers.set('x-user-role', payload.role)
+  headers.set('x-pathname', request.nextUrl.pathname)
 
   // Owner: use the property selected via cookie; staff: use property locked in JWT
   if (payload.role === 'owner') {

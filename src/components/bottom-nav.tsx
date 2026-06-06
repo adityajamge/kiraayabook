@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useT } from '@/lib/i18n'
+import { useRouter } from 'next/navigation'
 
 const navItems = [
   { href: '/dashboard',         icon: LayoutDashboard, key: 'nav.home' },
@@ -14,12 +15,30 @@ const navItems = [
   { href: '/dashboard/rent',    icon: DollarSign,      key: 'nav.rent' },
 ]
 
-export function BottomNav() {
+const LANGS = [
+  { code: 'en', label: 'EN' },
+  { code: 'mr', label: 'मराठी' },
+  { code: 'hi', label: 'हिंदी' },
+]
+
+export function BottomNav({ language }: { language: string }) {
   const t = useT()
+  const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [currentLang, setCurrentLang] = useState(language)
 
   const moreActive = pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/expenses')
+
+  const changeLanguage = async (lang: string) => {
+    setCurrentLang(lang)
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang }),
+    })
+    router.refresh()
+  }
 
   return (
     <>
@@ -92,6 +111,30 @@ export function BottomNav() {
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>
+
+            {/* Language switcher */}
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3 px-1 mb-3">
+                <Globe className="w-4 h-4 text-gray-400" />
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('settings.language')}</span>
+              </div>
+              <div className="flex gap-2">
+                {LANGS.map(({ code, label }) => (
+                  <button
+                    key={code}
+                    onClick={() => changeLanguage(code)}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors',
+                      currentLang === code
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </>
       )}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, CreditCard, LayoutGrid, Settings, Receipt, MapPin, UserCog } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, CreditCard, LayoutGrid, Settings, Receipt, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
@@ -14,7 +14,6 @@ const navItems = [
   { href: '/dashboard/rent',        icon: CreditCard,      key: 'nav.rent' },
   { href: '/dashboard/expenses',    icon: Receipt,         key: 'nav.expenses' },
   { href: '/dashboard/properties',  icon: MapPin,          key: 'nav.properties' },
-  { href: '/dashboard/staff',       icon: UserCog,         key: 'nav.staff' },
   { href: '/dashboard/settings',    icon: Settings,        key: 'nav.settings' },
 ]
 

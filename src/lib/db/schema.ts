@@ -13,6 +13,8 @@ export const organisations = pgTable('organisations', {
   dark_mode:              boolean('dark_mode').notNull().default(false),
   language:               text('language').notNull().default('en'),
   plan:                   text('plan').notNull().default('starter'),
+  google_client_id:       text('google_client_id'),
+  google_client_secret:   text('google_client_secret'),
   google_access_token:    text('google_access_token'),
   google_refresh_token:   text('google_refresh_token'),
   google_token_expiry:    timestamp('google_token_expiry'),

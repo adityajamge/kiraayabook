@@ -14,18 +14,6 @@ const sql = neon(process.env.DATABASE_URL!)
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const ask = (q: string) => new Promise<string>(res => rl.question(q, res))
 
-async function getConfig(key: string): Promise<string | null> {
-  const rows = await sql`SELECT value FROM platform_config WHERE key = ${key}`
-  return rows[0]?.value ?? null
-}
-
-async function setConfig(key: string, value: string) {
-  await sql`
-    INSERT INTO platform_config (key, value) VALUES (${key}, ${value})
-    ON CONFLICT (key) DO UPDATE SET value = ${value}
-  `
-}
-
 function openBrowser(url: string) {
   exec(`start "" "${url}"`)
 }
@@ -96,27 +84,10 @@ async function createDriveFolder(accessToken: string, orgName: string): Promise<
 async function main() {
   console.log('\n── KiraayaBook: Connect Google Drive ──\n')
 
-  // Load or prompt for Google credentials
-  let clientId     = await getConfig('google_client_id')
-  let clientSecret = await getConfig('google_client_secret')
-
-  if (!clientId || !clientSecret) {
-    console.log('Google credentials not found in DB. Enter them once:\n')
-    clientId     = await ask('Google Client ID:     ')
-    clientSecret = await ask('Google Client Secret: ')
-    await setConfig('google_client_id',     clientId)
-    await setConfig('google_client_secret', clientSecret)
-    console.log('✓ Credentials saved to DB.\n')
-  } else {
-    console.log('✓ Google credentials loaded from DB.\n')
-  }
-
-  // Find the PG org
   const email = await ask('PG owner email: ')
-  rl.close()
 
   const rows = await sql`
-    SELECT o.id, o.name FROM organisations o
+    SELECT o.id, o.name, o.google_client_id FROM organisations o
     JOIN users u ON u.org_id = o.id
     WHERE u.email = ${email}
     LIMIT 1
@@ -127,10 +98,21 @@ async function main() {
     process.exit(1)
   }
 
-  const org = rows[0] as { id: string; name: string }
+  const org = rows[0] as { id: string; name: string; google_client_id: string | null }
   console.log(`\nFound: "${org.name}" (${org.id})`)
 
-  // Build OAuth URL
+  // Ask for this org's own Google Cloud credentials
+  console.log('\nEnter the Google Cloud OAuth credentials for this PG owner\'s project:\n')
+  const clientId     = await ask('Google Client ID:     ')
+  const clientSecret = await ask('Google Client Secret: ')
+  rl.close()
+
+  if (!clientId.trim() || !clientSecret.trim()) {
+    console.error('\nClient ID and Secret are required.')
+    process.exit(1)
+  }
+
+  // Build OAuth URL using their credentials
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
   authUrl.searchParams.set('client_id',     clientId)
   authUrl.searchParams.set('redirect_uri',  REDIRECT_URI)
@@ -157,6 +139,8 @@ async function main() {
 
   await sql`
     UPDATE organisations SET
+      google_client_id       = ${clientId},
+      google_client_secret   = ${clientSecret},
       google_access_token    = ${tokens.access_token},
       google_refresh_token   = ${tokens.refresh_token},
       google_token_expiry    = ${expiry}::timestamp,

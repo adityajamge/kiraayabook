@@ -1,20 +1,15 @@
 import { db } from '@/lib/db'
-import { documents, organisations, platform_config } from '@/lib/db/schema'
+import { documents, organisations } from '@/lib/db/schema'
 import { getOrgId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
-async function refreshAccessToken(orgId: string, refreshToken: string): Promise<string> {
-  const [clientIdRow, clientSecretRow] = await Promise.all([
-    db.select().from(platform_config).where(eq(platform_config.key, 'google_client_id')).then(r => r[0]),
-    db.select().from(platform_config).where(eq(platform_config.key, 'google_client_secret')).then(r => r[0]),
-  ])
-
+async function refreshAccessToken(orgId: string, refreshToken: string, clientId: string, clientSecret: string): Promise<string> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id:     clientIdRow.value,
-      client_secret: clientSecretRow.value,
+      client_id:     clientId,
+      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type:    'refresh_token',
     }),
@@ -86,6 +81,8 @@ export async function POST(request: Request) {
   const [org] = await db
     .select({
       id:                     organisations.id,
+      google_client_id:       organisations.google_client_id,
+      google_client_secret:   organisations.google_client_secret,
       google_access_token:    organisations.google_access_token,
       google_refresh_token:   organisations.google_refresh_token,
       google_token_expiry:    organisations.google_token_expiry,
@@ -94,7 +91,7 @@ export async function POST(request: Request) {
     .from(organisations)
     .where(eq(organisations.id, org_id))
 
-  if (!org.google_drive_folder_id || !org.google_refresh_token) {
+  if (!org.google_drive_folder_id || !org.google_refresh_token || !org.google_client_id || !org.google_client_secret) {
     return Response.json(
       { error: 'Google Drive is not connected. Run pnpm add:drive to set it up.' },
       { status: 503 }
@@ -112,7 +109,7 @@ export async function POST(request: Request) {
 
   const needsRefresh = !org.google_token_expiry || org.google_token_expiry <= new Date()
   const accessToken  = needsRefresh
-    ? await refreshAccessToken(org.id, org.google_refresh_token)
+    ? await refreshAccessToken(org.id, org.google_refresh_token, org.google_client_id, org.google_client_secret)
     : org.google_access_token!
 
   const file_url = await uploadToDrive(accessToken, org.google_drive_folder_id, file)

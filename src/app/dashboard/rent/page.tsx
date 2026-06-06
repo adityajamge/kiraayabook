@@ -103,7 +103,8 @@ export default function RentPage() {
     const tenant = tenantMap[record.tenant_id]
     if (!tenant) return
     const dueStr = new Date(record.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    const msg = encodeURIComponent(t('whatsapp.rentDue', { name: tenant.name, amount: String(record.amount), date: dueStr, pgName: org?.name ?? 'Your PG' }))
+    const property = properties.find(p => p.id === (record as RentRecordWithProperty).property_id)
+    const msg = encodeURIComponent(t('whatsapp.rentDue', { name: tenant.name, amount: String(record.amount), date: dueStr, pgName: property?.name ?? 'Your PG' }))
     window.open(`https://wa.me/91${tenant.phone}?text=${msg}`, '_blank')
   }
 

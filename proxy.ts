@@ -7,7 +7,16 @@ export async function proxy(request: NextRequest) {
   if (!token) return NextResponse.next()
 
   const payload = await verifyJwt(token)
-  if (!payload) return NextResponse.next()
+  if (!payload) {
+    // Invalid / expired token — clear cookies and redirect dashboard routes to login
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+      const response = NextResponse.redirect(new URL('/login', request.url))
+      response.cookies.delete('kiraayabook_token')
+      response.cookies.delete('kiraayabook_property')
+      return response
+    }
+    return NextResponse.next()
+  }
 
   const headers = new Headers(request.headers)
   headers.set('x-org-id', payload.org_id)

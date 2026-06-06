@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { X, Download, Share2, Loader2 } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 export interface BillData {
   pgName: string
@@ -83,6 +84,7 @@ function PayMode({ label, active }: { label: string; active: boolean }) {
 }
 
 function BillContent({ data }: { data: BillData }) {
+  const t = useT()
   const isOnline = data.paymentMode === 'online'
   const isCash   = data.paymentMode === 'cash'
   const isCheque = data.paymentMode === 'cheque'
@@ -121,7 +123,7 @@ function BillContent({ data }: { data: BillData }) {
         gap: 12, flexWrap: 'wrap',
       }}>
         <span>{data.address ?? ''}</span>
-        {data.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob- {data.phone}</span>}
+        {data.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('bill.mob')} {data.phone}</span>}
       </div>
 
       {/* Body — two columns */}
@@ -131,7 +133,7 @@ function BillContent({ data }: { data: BillData }) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 13, paddingRight: 20 }}>
           {/* Bill No + status badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 30 }}>
-            <span style={{ fontSize: 12, color: '#3a0000', fontFamily: SERIF }}>Bill No :</span>
+            <span style={{ fontSize: 12, color: '#3a0000', fontFamily: SERIF }}>{t('bill.billNo')}</span>
             <span style={{ fontSize: 18, fontWeight: 700, color: MAROON, fontFamily: SERIF }}>{data.billNo}</span>
             <span style={{
               fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
@@ -139,12 +141,12 @@ function BillContent({ data }: { data: BillData }) {
               background: data.status === 'paid' ? '#166534' : '#991b1b',
               color: '#fff', fontFamily: 'Arial, sans-serif',
             }}>
-              {data.status === 'paid' ? 'PAID' : 'UNPAID'}
+              {data.status === 'paid' ? t('bill.paid') : t('bill.unpaid')}
             </span>
           </div>
-          <Row label="Full Name :"><Box value={data.tenantName} /></Row>
-          <Row label="Joining Date :"><Box value={fmtDate(data.joiningDate)} /></Row>
-          <Row label="Rent :"><Box value={`₹${data.amount.toLocaleString('en-IN')}`} /></Row>
+          <Row label={t('bill.fullName')}><Box value={data.tenantName} /></Row>
+          <Row label={t('bill.joiningDate')}><Box value={fmtDate(data.joiningDate)} /></Row>
+          <Row label={t('bill.rent')}><Box value={`₹${data.amount.toLocaleString('en-IN')}`} /></Row>
         </div>
 
         {/* Vertical divider */}
@@ -152,16 +154,16 @@ function BillContent({ data }: { data: BillData }) {
 
         {/* Right column */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 13, paddingLeft: 20 }}>
-          <Row label="Date :"><Box value={fmtDate(data.date)} /></Row>
-          <Row label="Room No. :"><Box value={data.roomNumber} /></Row>
+          <Row label={t('bill.date')}><Box value={fmtDate(data.date)} /></Row>
+          <Row label={t('bill.roomNo')}><Box value={data.roomNumber} /></Row>
           {/* Date From / To inline */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: '#3a0000', whiteSpace: 'nowrap', fontFamily: SERIF }}>Date From :</span>
+            <span style={{ fontSize: 12, color: '#3a0000', whiteSpace: 'nowrap', fontFamily: SERIF }}>{t('bill.dateFrom')}</span>
             <Box value={fmtDate(data.periodFrom)} minW={90} />
-            <span style={{ fontSize: 12, color: '#3a0000', whiteSpace: 'nowrap', fontFamily: SERIF }}>To :</span>
+            <span style={{ fontSize: 12, color: '#3a0000', whiteSpace: 'nowrap', fontFamily: SERIF }}>{t('bill.to')}</span>
             <Box value={fmtDate(data.periodTo)} minW={90} />
           </div>
-          <Row label="Adv :"><Box value="" /></Row>
+          <Row label={t('bill.adv')}><Box value="" /></Row>
         </div>
       </div>
 
@@ -172,7 +174,7 @@ function BillContent({ data }: { data: BillData }) {
       <div style={{ display: 'flex', gap: 24, padding: '0 24px 22px', alignItems: 'flex-start' }}>
         {/* Notes */}
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: MAROON, marginBottom: 8, fontFamily: SERIF }}>Note :-</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: MAROON, marginBottom: 8, fontFamily: SERIF }}>{t('bill.note')}</p>
           <div style={{
             background: '#fff', borderRadius: 6,
             padding: '10px 12px', minHeight: 80,
@@ -184,11 +186,11 @@ function BillContent({ data }: { data: BillData }) {
 
         {/* Payment Mode */}
         <div style={{ minWidth: 180 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: MAROON, marginBottom: 12, fontFamily: SERIF }}>Payment Mode</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: MAROON, marginBottom: 12, fontFamily: SERIF }}>{t('bill.paymentMode')}</p>
           <div style={{ display: 'flex', gap: 18 }}>
-            <PayMode label="Online"  active={isOnline} />
-            <PayMode label="Cash"    active={isCash}   />
-            <PayMode label="Cheque"  active={isCheque} />
+            <PayMode label={t('bill.online')}  active={isOnline} />
+            <PayMode label={t('bill.cash')}    active={isCash}   />
+            <PayMode label={t('bill.cheque')}  active={isCheque} />
           </div>
         </div>
       </div>
@@ -197,6 +199,7 @@ function BillContent({ data }: { data: BillData }) {
 }
 
 export function BillPreview({ data, onClose }: { data: BillData; onClose: () => void }) {
+  const t = useT()
   const billRef  = useRef<HTMLDivElement>(null)
   const zoomRef  = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
@@ -286,7 +289,7 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
       <div className="flex flex-col items-center px-4 py-4 pb-8">
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-3 w-full" style={{ maxWidth: 880 * scale }}>
-          <span className="text-white font-semibold text-sm">Bill Preview</span>
+          <span className="text-white font-semibold text-sm">{t('bill.preview')}</span>
           <div className="flex items-center gap-2">
             <button
               onClick={handleShare}
@@ -294,7 +297,7 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
               className="flex items-center gap-1.5 bg-green-500 text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-600 disabled:opacity-60"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-              Share
+              {t('bill.share')}
             </button>
             <button
               onClick={handlePdf}
@@ -302,7 +305,7 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
               className="flex items-center gap-1.5 bg-white text-black text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-100 disabled:opacity-60"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              PDF
+              {t('bill.pdf')}
             </button>
             <button onClick={onClose} className="w-9 h-9 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center">
               <X className="w-4 h-4" />

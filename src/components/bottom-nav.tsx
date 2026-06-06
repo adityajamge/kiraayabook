@@ -5,15 +5,17 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Building2, Users, DollarSign, MoreHorizontal, Settings, Receipt, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 
-const nav = [
-  { href: '/dashboard',         icon: LayoutDashboard, label: 'Home' },
-  { href: '/dashboard/rooms',   icon: Building2,       label: 'Rooms' },
-  { href: '/dashboard/tenants', icon: Users,           label: 'Tenants' },
-  { href: '/dashboard/rent',    icon: DollarSign,      label: 'Rent' },
+const navItems = [
+  { href: '/dashboard',         icon: LayoutDashboard, key: 'nav.home' },
+  { href: '/dashboard/rooms',   icon: Building2,       key: 'nav.rooms' },
+  { href: '/dashboard/tenants', icon: Users,           key: 'nav.tenants' },
+  { href: '/dashboard/rent',    icon: DollarSign,      key: 'nav.rent' },
 ]
 
 export function BottomNav() {
+  const t = useT()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -25,7 +27,7 @@ export function BottomNav() {
         className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex z-50"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {nav.map(({ href, icon: Icon, label }) => {
+        {navItems.map(({ href, icon: Icon, key }) => {
           const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
           return (
             <Link
@@ -37,7 +39,7 @@ export function BottomNav() {
               )}
             >
               <Icon className={cn('w-5 h-5', active ? 'stroke-[2.5]' : 'stroke-2')} />
-              {label}
+              {t(key)}
             </Link>
           )
         })}
@@ -49,7 +51,7 @@ export function BottomNav() {
           )}
         >
           <MoreHorizontal className={cn('w-5 h-5', moreActive ? 'stroke-[2.5]' : 'stroke-2')} />
-          More
+          {t('nav.more')}
         </button>
       </nav>
 
@@ -73,7 +75,7 @@ export function BottomNav() {
                 <div className="w-11 h-11 bg-red-50 dark:bg-red-900/30 rounded-2xl flex items-center justify-center">
                   <Receipt className="w-5 h-5 text-red-500" />
                 </div>
-                <span className="font-semibold text-[15px] dark:text-white">Expenses</span>
+                <span className="font-semibold text-[15px] dark:text-white">{t('nav.expenses')}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>
@@ -86,7 +88,7 @@ export function BottomNav() {
                 <div className="w-11 h-11 bg-black dark:bg-white rounded-2xl flex items-center justify-center">
                   <Settings className="w-5 h-5 text-white dark:text-black" />
                 </div>
-                <span className="font-semibold text-[15px] dark:text-white">Settings</span>
+                <span className="font-semibold text-[15px] dark:text-white">{t('nav.settings')}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>

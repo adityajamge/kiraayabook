@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Trash2, ChevronLeft, ChevronRight, Receipt } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { useT } from '@/lib/i18n'
 
 interface Expense {
   id: string
@@ -33,6 +34,7 @@ function fmtDay(d: string) {
 const today = new Date().toISOString().slice(0, 10)
 
 export default function ExpensesPage() {
+  const t = useT()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -97,7 +99,7 @@ export default function ExpensesPage() {
       {/* ── Mobile layout ── */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold dark:text-white">Expenses</h1>
+          <h1 className="text-2xl font-bold dark:text-white">{t('expenses.title')}</h1>
           <button onClick={openAdd}
             className="w-9 h-9 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-sm">
             <Plus className="w-4 h-4" />
@@ -121,7 +123,7 @@ export default function ExpensesPage() {
         {!loading && expenses.length > 0 && (
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total spent</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('expenses.totalSpent')}</p>
               <p className="text-2xl font-bold text-red-500">{fmt(total)}</p>
             </div>
             <Receipt className="w-8 h-8 text-gray-200 dark:text-gray-700" />
@@ -134,7 +136,7 @@ export default function ExpensesPage() {
             {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
           </div>
         ) : expenses.length === 0 ? (
-          <p className="text-center py-16 text-gray-400 text-sm">No expenses this month.</p>
+          <p className="text-center py-16 text-gray-400 text-sm">{t('expenses.noExpenses')}</p>
         ) : (
           <div className="space-y-2.5">
             {expenses.map((e) => (
@@ -158,15 +160,15 @@ export default function ExpensesPage() {
       <div className="hidden lg:block">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold dark:text-white">Expenses</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Track your PG running costs.</p>
+            <h1 className="text-2xl font-bold dark:text-white">{t('expenses.title')}</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('expenses.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
             <button onClick={openAdd}
               className="flex items-center gap-1.5 bg-black dark:bg-white text-white dark:text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
-              <Plus className="w-4 h-4" />Add Expense
+              <Plus className="w-4 h-4" />{t('expenses.addExpense')}
             </button>
           </div>
         </div>
@@ -174,7 +176,7 @@ export default function ExpensesPage() {
         {!loading && expenses.length > 0 && (
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-5 py-4 mb-5 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Total spent this month</p>
+              <p className="text-xs text-gray-400 mb-1">{t('expenses.totalSpentThisMonth')}</p>
               <p className="text-2xl font-bold text-red-500">{fmt(total)}</p>
             </div>
             <Receipt className="w-8 h-8 text-gray-200 dark:text-gray-700" />
@@ -191,14 +193,14 @@ export default function ExpensesPage() {
             ))}
           </div>
         ) : expenses.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">No expenses this month.</div>
+          <div className="text-center py-16 text-gray-400 text-sm">{t('expenses.noExpenses')}</div>
         ) : (
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700">
-                  {['DATE', 'DESCRIPTION', 'AMOUNT', ''].map((h) => (
-                    <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
+                  {[t('expenses.dateHeader'), t('expenses.descriptionHeader'), t('expenses.amountHeader'), ''].map((h, i) => (
+                    <th key={i} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -219,7 +221,7 @@ export default function ExpensesPage() {
               </tbody>
             </table>
             <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
-              {expenses.length} expense{expenses.length !== 1 ? 's' : ''} · Total {fmt(total)}
+              {expenses.length === 1 ? t('expenses.expenseCount', { count: String(expenses.length) }) : t('expenses.expenseCountPlural', { count: String(expenses.length) })} · {t('expenses.total', { amount: fmt(total) })}
             </div>
           </div>
         )}
@@ -228,21 +230,21 @@ export default function ExpensesPage() {
       {/* Add Expense dialog */}
       <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false) }}>
         <DialogContent className="sm:max-w-xs">
-          <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('expenses.addExpense')}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">Description</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t('expenses.description')}</label>
               <input
                 maxLength={200}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Electricity bill"
+                placeholder={t('expenses.descriptionPlaceholder')}
                 autoFocus
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">Amount (₹)</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t('expenses.amount')}</label>
               <input
                 type="number"
                 min="1"
@@ -250,12 +252,12 @@ export default function ExpensesPage() {
                 inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 2500"
+                placeholder={t('expenses.amountPlaceholder')}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">Date</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t('expenses.date')}</label>
               <input
                 type="date"
                 max={today}
@@ -266,10 +268,10 @@ export default function ExpensesPage() {
             </div>
             <div className="flex gap-2 pt-1">
               <button onClick={() => setOpen(false)}
-                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('common.cancel')}</button>
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? t('expenses.saving') : t('expenses.save')}
               </button>
             </div>
           </div>

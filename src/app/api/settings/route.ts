@@ -14,6 +14,7 @@ export async function GET(request: Request) {
       logo_url:   organisations.logo_url,
       bill_notes: organisations.bill_notes,
       dark_mode:  organisations.dark_mode,
+      language:   organisations.language,
     })
     .from(organisations)
     .where(eq(organisations.id, org_id))
@@ -31,6 +32,7 @@ export async function PUT(request: Request) {
   if ('address'    in body) updates.address    = body.address
   if ('bill_notes' in body) updates.bill_notes = body.bill_notes
   if ('dark_mode'  in body) updates.dark_mode  = body.dark_mode
+  if ('language'   in body) updates.language   = body.language
 
   if (Object.keys(updates).length === 0)
     return Response.json({ error: 'nothing to update' }, { status: 400 })

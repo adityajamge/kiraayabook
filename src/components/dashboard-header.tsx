@@ -2,8 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import { MapPin, LogOut } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 export function DashboardHeader({ orgName }: { orgName: string }) {
+  const t = useT()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -26,7 +28,7 @@ export function DashboardHeader({ orgName }: { orgName: string }) {
         className="flex items-center gap-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0"
       >
         <LogOut className="w-4 h-4" />
-        <span className="hidden sm:inline">Logout</span>
+        <span className="hidden sm:inline">{t('common.logout')}</span>
       </button>
     </header>
   )

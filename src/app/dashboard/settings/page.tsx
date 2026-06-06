@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Building2, Save, Upload, LayoutGrid, Moon, FileText } from 'lucide-react'
+import { Building2, Save, Upload, LayoutGrid, Moon, FileText, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n'
 
 type OrgSettings = {
   name: string
@@ -13,6 +15,7 @@ type OrgSettings = {
   logo_url: string | null
   bill_notes: string | null
   dark_mode: boolean
+  language: string
 }
 
 function Field({
@@ -46,6 +49,8 @@ function Field({
 }
 
 export default function SettingsPage() {
+  const t = useT()
+  const router = useRouter()
   const [settings, setSettings] = useState<OrgSettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -93,6 +98,16 @@ export default function SettingsPage() {
     })
   }
 
+  async function changeLanguage(lang: string) {
+    set('language', lang)
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang }),
+    })
+    router.refresh()
+  }
+
   async function uploadLogo(file: File) {
     setLogoUploading(true)
     const formData = new FormData()
@@ -118,13 +133,17 @@ export default function SettingsPage() {
     )
   }
 
+  const langs = [
+    { code: 'en', label: t('settings.langEn') },
+    { code: 'mr', label: t('settings.langMr') },
+    { code: 'hi', label: t('settings.langHi') },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold dark:text-white">Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage your PG profile, appearance and account preferences.
-        </p>
+        <h1 className="text-2xl font-semibold dark:text-white">{t('settings.title')}</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.subtitle')}</p>
       </div>
 
       {/* PG Profile */}
@@ -132,40 +151,23 @@ export default function SettingsPage() {
         <div>
           <div className="flex items-center gap-2 font-semibold dark:text-white">
             <Building2 className="w-4 h-4" />
-            PG Profile
+            {t('settings.pgProfile')}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Details shown across your dashboard and to tenants.
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.pgProfileDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={t('settings.pgName')} maxLength={100} value={settings.name} onChange={v => set('name', v)} />
+          <Field label={t('settings.ownerName')} maxLength={100} value={settings.owner_name ?? ''} onChange={v => set('owner_name', v)} />
           <Field
-            label="PG Name"
-            maxLength={100}
-            value={settings.name}
-            onChange={v => set('name', v)}
-          />
-          <Field
-            label="Owner Name"
-            maxLength={100}
-            value={settings.owner_name ?? ''}
-            onChange={v => set('owner_name', v)}
-          />
-          <Field
-            label="Contact Number"
+            label={t('settings.contactNumber')}
             type="tel"
             inputMode="numeric"
             maxLength={10}
             value={settings.phone ?? ''}
             onChange={v => set('phone', v.replace(/\D/g, '').slice(0, 10))}
           />
-          <Field
-            label="Address"
-            maxLength={300}
-            value={settings.address ?? ''}
-            onChange={v => set('address', v)}
-          />
+          <Field label={t('settings.address')} maxLength={300} value={settings.address ?? ''} onChange={v => set('address', v)} />
         </div>
 
         <div className="flex justify-end">
@@ -175,7 +177,7 @@ export default function SettingsPage() {
             className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 transition-colors"
           >
             <Save className="w-4 h-4" />
-            {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
+            {saved ? t('common.saved') : saving ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </section>
@@ -185,19 +187,17 @@ export default function SettingsPage() {
         <div>
           <div className="flex items-center gap-2 font-semibold dark:text-white">
             <FileText className="w-4 h-4" />
-            Bill Notes
+            {t('settings.billNotes')}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            This note is printed on every rent bill you generate.
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.billNotesDesc')}</p>
         </div>
 
         <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-          <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1.5">Notes (shown on bill)</label>
+          <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1.5">{t('settings.notesLabel')}</label>
           <textarea
             rows={3}
             maxLength={500}
-            placeholder="e.g. Rent is due on the 5th of every month. Late payment attracts ₹100 fine."
+            placeholder={t('settings.notesPlaceholder')}
             value={settings.bill_notes ?? ''}
             onChange={e => set('bill_notes', e.target.value || null)}
             className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white resize-none"
@@ -211,8 +211,35 @@ export default function SettingsPage() {
             className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 transition-colors"
           >
             <Save className="w-4 h-4" />
-            {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
+            {saved ? t('common.saved') : saving ? t('common.saving') : t('common.save')}
           </button>
+        </div>
+      </section>
+
+      {/* Language */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
+        <div>
+          <div className="flex items-center gap-2 font-semibold dark:text-white">
+            <Globe className="w-4 h-4" />
+            {t('settings.language')}
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.languageDesc')}</p>
+        </div>
+
+        <div className="flex items-center gap-2 pt-4 border-t border-gray-100 dark:border-gray-700 flex-wrap">
+          {langs.map(({ code, label }) => (
+            <button
+              key={code}
+              onClick={() => changeLanguage(code)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                settings.language === code
+                  ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -221,11 +248,9 @@ export default function SettingsPage() {
         <div>
           <div className="flex items-center gap-2 font-semibold dark:text-white">
             <Moon className="w-4 h-4" />
-            Appearance
+            {t('settings.appearance')}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Customize how your dashboard looks for you.
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.appearanceDesc')}</p>
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -234,8 +259,8 @@ export default function SettingsPage() {
               <Moon className="w-4 h-4 text-gray-500 dark:text-gray-300" />
             </div>
             <div>
-              <p className="text-sm font-medium dark:text-white">Dark Mode</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Use a dark theme across the dashboard.</p>
+              <p className="text-sm font-medium dark:text-white">{t('settings.darkMode')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.darkModeDesc')}</p>
             </div>
           </div>
           <button
@@ -260,23 +285,15 @@ export default function SettingsPage() {
         <div>
           <div className="flex items-center gap-2 font-semibold dark:text-white">
             <LayoutGrid className="w-4 h-4" />
-            Branding
+            {t('settings.branding')}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Upload a logo to replace the default icon.
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.brandingDesc')}</p>
         </div>
 
         <div className="flex items-center gap-5 pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${settings.logo_url ? '' : 'bg-black'}`}>
             {settings.logo_url ? (
-              <Image
-                src={settings.logo_url}
-                alt="PG Logo"
-                width={56}
-                height={56}
-                className="object-contain w-full h-full"
-              />
+              <Image src={settings.logo_url} alt="PG Logo" width={56} height={56} className="object-contain w-full h-full" />
             ) : (
               <LayoutGrid className="w-6 h-6 text-white" />
             )}
@@ -290,20 +307,18 @@ export default function SettingsPage() {
                 className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 dark:text-gray-200 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-4 h-4" />
-                {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                {logoUploading ? t('common.uploading') : t('settings.uploadLogo')}
               </button>
               {settings.logo_url && (
                 <button
                   onClick={removeLogo}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 >
-                  Remove
+                  {t('settings.remove')}
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              PNG or SVG, recommended 256×256px, max 1MB.
-            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('settings.logoHint')}</p>
             <input
               ref={fileInputRef}
               type="file"

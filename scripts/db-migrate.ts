@@ -31,6 +31,10 @@ async function main() {
   await sql`ALTER TABLE rent_records DROP COLUMN IF EXISTS month`
   console.log('✓ rent_records (period_start, period_end)')
 
+  // Language preference on organisations
+  await sql`ALTER TABLE organisations ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'en'`
+  console.log('✓ organisations (language column)')
+
   console.log('\nAll migrations applied.\n')
   process.exit(0)
 }

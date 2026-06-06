@@ -5,17 +5,19 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Building2, Users, CreditCard, LayoutGrid, Settings, Receipt } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 
-const nav = [
-  { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/rooms',     icon: Building2,       label: 'Rooms' },
-  { href: '/dashboard/tenants',   icon: Users,           label: 'Tenants' },
-  { href: '/dashboard/rent',      icon: CreditCard,      label: 'Rent' },
-  { href: '/dashboard/expenses',  icon: Receipt,         label: 'Expenses' },
-  { href: '/dashboard/settings',  icon: Settings,        label: 'Settings' },
+const navItems = [
+  { href: '/dashboard',           icon: LayoutDashboard, key: 'nav.dashboard' },
+  { href: '/dashboard/rooms',     icon: Building2,       key: 'nav.rooms' },
+  { href: '/dashboard/tenants',   icon: Users,           key: 'nav.tenants' },
+  { href: '/dashboard/rent',      icon: CreditCard,      key: 'nav.rent' },
+  { href: '/dashboard/expenses',  icon: Receipt,         key: 'nav.expenses' },
+  { href: '/dashboard/settings',  icon: Settings,        key: 'nav.settings' },
 ]
 
 export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: string | null }) {
+  const t = useT()
   const pathname = usePathname()
 
   return (
@@ -34,7 +36,7 @@ export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: strin
       </div>
 
       <nav className="flex-1 p-3 space-y-0.5">
-        {nav.map(({ href, icon: Icon, label }) => {
+        {navItems.map(({ href, icon: Icon, key }) => {
           const active =
             href === '/dashboard'
               ? pathname === '/dashboard'
@@ -51,7 +53,7 @@ export function Sidebar({ orgName, logoUrl }: { orgName: string; logoUrl?: strin
               )}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              {t(key)}
             </Link>
           )
         })}

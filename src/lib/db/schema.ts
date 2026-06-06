@@ -11,6 +11,7 @@ export const organisations = pgTable('organisations', {
   logo_url:               text('logo_url'),
   bill_notes:             text('bill_notes'),
   dark_mode:              boolean('dark_mode').notNull().default(false),
+  language:               text('language').notNull().default('en'),
   plan:                   text('plan').notNull().default('starter'),
   google_access_token:    text('google_access_token'),
   google_refresh_token:   text('google_refresh_token'),

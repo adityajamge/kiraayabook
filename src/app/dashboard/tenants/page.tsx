@@ -6,6 +6,7 @@ import { Plus, Eye, Search, CheckCircle, MessageCircle, RefreshCw, Building2, Ca
 import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useT } from '@/lib/i18n'
 
 interface Room { id: string; room_number: string }
 interface Tenant {
@@ -48,6 +49,7 @@ const emptyForm = { name: '', phone: '', email: '', room_id: '', cot_number: '',
 type StatusFilter = 'all' | 'active' | 'vacated'
 
 export default function TenantsPage() {
+  const t = useT()
   const router = useRouter()
   const [tab, setTab] = useState<'tenants' | 'collect'>('tenants')
 
@@ -91,10 +93,10 @@ export default function TenantsPage() {
 
   const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_number]))
 
-  const filtered = tenants.filter((t) => {
+  const filtered = tenants.filter((tenant) => {
     const q = search.toLowerCase()
-    const matchSearch = !q || t.name.toLowerCase().includes(q) || t.phone.includes(q)
-    const matchStatus = statusFilter === 'all' || t.status === statusFilter
+    const matchSearch = !q || tenant.name.toLowerCase().includes(q) || tenant.phone.includes(q)
+    const matchStatus = statusFilter === 'all' || tenant.status === statusFilter
     return matchSearch && matchStatus
   })
 
@@ -116,7 +118,7 @@ export default function TenantsPage() {
       toast.error('Move-out date must be after move-in date.')
       return
     }
-    if (tenants.some((t) => t.phone === form.phone)) {
+    if (tenants.some((tenant) => tenant.phone === form.phone)) {
       toast.error('A tenant with this phone number already exists.')
       return
     }
@@ -153,83 +155,73 @@ export default function TenantsPage() {
 
   const sendWhatsApp = (r: CollectRecord) => {
     const dueStr = new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    const msg = encodeURIComponent(`Hi ${r.tenant_name}, your rent of ${fmt(r.amount)} is due on ${dueStr}. Please pay at the earliest. - ${orgName}`)
+    const msg = encodeURIComponent(t('whatsapp.rentDue', { name: r.tenant_name, amount: r.amount, date: dueStr, pgName: orgName }))
     window.open(`https://wa.me/91${r.phone}?text=${msg}`, '_blank')
   }
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const setField = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
   const pendingCount = collectRecords.filter((r) => r.status === 'pending').length
 
-  const addTenantDialog = (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
-      <DialogTrigger asChild>
-        <button className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed bottom-24 right-4 z-40 lg:hidden">
-          <Plus className="w-6 h-6" />
-        </button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Add Tenant</DialogTitle></DialogHeader>
-        <div className="space-y-3 mt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
-              <input maxLength={100} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
-              <input type="tel" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => set('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit number"
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Optional"
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
-              <select value={form.room_id} onChange={(e) => set('room_id', e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
-                <option value="">Select room</option>
-                {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Cot</label>
-              <input maxLength={10} value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
-            <input type="number" min="0" max="999999" inputMode="numeric" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
-              <input type="date" value={form.move_in_date} onChange={(e) => set('move_in_date', e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Move-out Date</label>
-              <input type="date" min={form.move_in_date || undefined} value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            </div>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button onClick={() => setOpen(false)}
-              className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+  const addTenantForm = (
+    <div className="space-y-3 mt-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.name')} <span className="text-red-500">*</span></label>
+          <input maxLength={100} value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder={t('tenants.fullNamePlaceholder')}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
         </div>
-      </DialogContent>
-    </Dialog>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.phone')} <span className="text-red-500">*</span></label>
+          <input type="tel" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit number"
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('tenants.email')}</label>
+        <input type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder={t('common.optional')}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.roomLabel')} <span className="text-red-500">*</span></label>
+          <select value={form.room_id} onChange={(e) => setField('room_id', e.target.value)}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
+            <option value="">{t('tenants.selectRoom')}</option>
+            {rooms.map((r) => <option key={r.id} value={r.id}>{t('common.room')} {r.room_number}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.cot')}</label>
+          <input maxLength={10} value={form.cot_number} onChange={(e) => setField('cot_number', e.target.value)} placeholder="e.g. C1"
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">{t('tenants.monthlyRent')}</label>
+        <input type="number" min="0" max="999999" inputMode="numeric" value={form.rent_amount} onChange={(e) => setField('rent_amount', e.target.value)} placeholder="e.g. 5000"
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.moveInDate')} <span className="text-red-500">*</span></label>
+          <input type="date" value={form.move_in_date} onChange={(e) => setField('move_in_date', e.target.value)}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('tenants.moveOutDate')}</label>
+          <input type="date" min={form.move_in_date || undefined} value={form.move_out_date ?? ''} onChange={(e) => setField('move_out_date', e.target.value)}
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button onClick={() => setOpen(false)}
+          className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('common.cancel')}</button>
+        <button onClick={handleSave} disabled={saving}
+          className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
+          {saving ? t('tenants.saving') : t('tenants.save')}
+        </button>
+      </div>
+    </div>
   )
 
   return (
@@ -237,7 +229,7 @@ export default function TenantsPage() {
       {/* ── Mobile layout ── */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold dark:text-white">Tenants</h1>
+          <h1 className="text-2xl font-bold dark:text-white">{t('tenants.title')}</h1>
           {tab === 'tenants' && (
             <button onClick={() => setSearch((s) => s ? '' : ' ')}
               className="w-9 h-9 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-500">
@@ -250,11 +242,11 @@ export default function TenantsPage() {
         <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-4">
           <button onClick={() => setTab('tenants')}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
-            All Tenants
+            {t('tenants.allTenants')}
           </button>
           <button onClick={() => setTab('collect')}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === 'collect' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
-            Collect Rent
+            {t('tenants.collectRent')}
             {pendingCount > 0 && tab !== 'collect' && (
               <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
             )}
@@ -266,14 +258,12 @@ export default function TenantsPage() {
           <>
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input value={search.trim()}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tenants..."
+              <input value={search.trim()} onChange={(e) => setSearch(e.target.value)} placeholder={t('tenants.searchPlaceholder')}
                 className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none dark:text-white" />
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-              {([['all', 'All'], ['active', 'Active'], ['vacated', 'Exited']] as [StatusFilter, string][]).map(([val, label]) => (
+              {([['all', t('common.all')], ['active', t('tenants.filterActive')], ['vacated', t('tenants.filterExited')]] as [StatusFilter, string][]).map(([val, label]) => (
                 <button key={val} onClick={() => setStatusFilter(val)}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${statusFilter === val ? 'bg-black text-white dark:bg-white dark:text-black' : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
                   {label}
@@ -286,35 +276,45 @@ export default function TenantsPage() {
                 {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
               </div>
             ) : filtered.length === 0 ? (
-              <p className="text-center py-12 text-gray-400 text-sm">No tenants found.</p>
+              <p className="text-center py-12 text-gray-400 text-sm">{t('tenants.noTenantsFound')}</p>
             ) : (
               <div className="space-y-2.5">
-                {filtered.map((t) => (
-                  <button key={t.id} onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                {filtered.map((tenant) => (
+                  <button key={tenant.id} onClick={() => router.push(`/dashboard/tenants/${tenant.id}`)}
                     className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left active:bg-gray-50">
                     <div className="w-11 h-11 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
-                      {initials(t.name)}
+                      {initials(tenant.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm dark:text-white">{t.name}</p>
+                      <p className="font-semibold text-sm dark:text-white">{tenant.name}</p>
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <Building2 className="w-3 h-3" />Room {roomMap[t.room_id] ?? '—'}
+                          <Building2 className="w-3 h-3" />{t('common.room')} {roomMap[tenant.room_id] ?? '—'}
                         </span>
                         <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="w-3 h-3" />{fmtDateLong(t.move_in_date)}
+                          <Calendar className="w-3 h-3" />{fmtDateLong(tenant.move_in_date)}
                         </span>
                       </div>
                     </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                      {t.status === 'active' ? 'Active' : 'Exited'}
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${tenant.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                      {tenant.status === 'active' ? t('tenants.active') : t('tenants.filterExited')}
                     </span>
                   </button>
                 ))}
               </div>
             )}
 
-            {addTenantDialog}
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
+              <DialogTrigger asChild>
+                <button className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed bottom-24 right-4 z-40 lg:hidden">
+                  <Plus className="w-6 h-6" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader><DialogTitle>{t('tenants.addTenant')}</DialogTitle></DialogHeader>
+                {addTenantForm}
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
@@ -325,15 +325,15 @@ export default function TenantsPage() {
               <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                 <button onClick={() => setCollectFilter('pending')}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'pending' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
-                  Pending {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
+                  {t('tenants.pendingLabel')} {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
                 </button>
                 <button onClick={() => setCollectFilter('all')}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm dark:text-white' : 'text-gray-500'}`}>
-                  All
+                  {t('tenants.allLabel')}
                 </button>
               </div>
               <button onClick={loadCollect} className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg">
-                <RefreshCw className="w-3.5 h-3.5" />Refresh
+                <RefreshCw className="w-3.5 h-3.5" />{t('common.refresh')}
               </button>
             </div>
 
@@ -343,7 +343,7 @@ export default function TenantsPage() {
               </div>
             ) : visibleCollect.length === 0 ? (
               <p className="text-center py-12 text-gray-400 text-sm">
-                {collectFilter === 'pending' ? 'All rent collected this month!' : 'No records for this month.'}
+                {collectFilter === 'pending' ? t('tenants.allCollectedThisMonth') : t('tenants.noRecordsThisMonth')}
               </p>
             ) : (
               <div className="space-y-2.5">
@@ -355,19 +355,19 @@ export default function TenantsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm dark:text-white">{r.tenant_name}</p>
-                        <p className="text-xs text-gray-500">Room {r.room_number} · {fmt(r.amount)}</p>
+                        <p className="text-xs text-gray-500">{t('common.room')} {r.room_number} · {fmt(r.amount)}</p>
                       </div>
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${r.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                        {r.status === 'paid' ? '✓ Paid' : 'Pending'}
+                        {r.status === 'paid' ? '✓ ' + t('common.paid') : t('common.pending')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-400">Due {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      <p className="text-xs text-gray-400">{t('tenants.due', { date: new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) })}</p>
                       {r.status === 'pending' && (
                         <div className="flex items-center gap-2">
                           <button onClick={() => { setPayDialog({ id: r.id, name: r.tenant_name }); setPayMode('cash') }}
                             className="flex items-center gap-1.5 text-xs bg-black text-white font-semibold px-3 py-1.5 rounded-full hover:bg-gray-800">
-                            <CheckCircle className="w-3.5 h-3.5" />Mark Paid
+                            <CheckCircle className="w-3.5 h-3.5" />{t('tenants.markPaid')}
                           </button>
                           <button onClick={() => sendWhatsApp(r)}
                             className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
@@ -388,77 +388,19 @@ export default function TenantsPage() {
       <div className="hidden lg:block">
         <div className="flex items-center justify-between gap-3 mb-5">
           <div>
-            <h1 className="text-2xl font-bold">Tenants</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Manage tenants and collect rent.</p>
+            <h1 className="text-2xl font-bold">{t('tenants.title')}</h1>
+            <p className="text-gray-500 text-sm mt-0.5">{t('tenants.subtitle')}</p>
           </div>
           {tab === 'tenants' && (
             <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm) }}>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-1.5 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-                  <Plus className="w-4 h-4" />Add Tenant
+                  <Plus className="w-4 h-4" />{t('tenants.addTenant')}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Add Tenant</DialogTitle></DialogHeader>
-                <div className="space-y-3 mt-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
-                      <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name"
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
-                      <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit number"
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
-                    <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Optional"
-                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Room <span className="text-red-500">*</span></label>
-                      <select value={form.room_id} onChange={(e) => set('room_id', e.target.value)}
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
-                        <option value="">Select room</option>
-                        {rooms.map((r) => <option key={r.id} value={r.id}>Room {r.room_number}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Cot</label>
-                      <input value={form.cot_number} onChange={(e) => set('cot_number', e.target.value)} placeholder="e.g. C1"
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Monthly Rent (₹)</label>
-                    <input type="number" min="0" value={form.rent_amount} onChange={(e) => set('rent_amount', e.target.value)} placeholder="e.g. 5000"
-                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Move-in Date <span className="text-red-500">*</span></label>
-                      <input type="date" value={form.move_in_date} onChange={(e) => set('move_in_date', e.target.value)}
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Move-out Date</label>
-                      <input type="date" min={form.move_in_date || undefined} value={form.move_out_date ?? ''} onChange={(e) => set('move_out_date', e.target.value)}
-                        className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <button onClick={() => setOpen(false)}
-                      className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                    <button onClick={handleSave} disabled={saving}
-                      className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
-                      {saving ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
-                </div>
+                <DialogHeader><DialogTitle>{t('tenants.addTenant')}</DialogTitle></DialogHeader>
+                {addTenantForm}
               </DialogContent>
             </Dialog>
           )}
@@ -468,11 +410,11 @@ export default function TenantsPage() {
         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-5">
           <button onClick={() => setTab('tenants')}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === 'tenants' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500'}`}>
-            All Tenants
+            {t('tenants.allTenants')}
           </button>
           <button onClick={() => setTab('collect')}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${tab === 'collect' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500'}`}>
-            Collect Rent
+            {t('tenants.collectRent')}
             {pendingCount > 0 && tab !== 'collect' && (
               <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
             )}
@@ -485,14 +427,14 @@ export default function TenantsPage() {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <div className="relative flex-1 min-w-45 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone"
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('tenants.searchByNameOrPhone')}
                   className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gray-400" />
               </div>
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
                 className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="vacated">Vacated</option>
+                <option value="all">{t('tenants.allStatus')}</option>
+                <option value="active">{t('common.active')}</option>
+                <option value="vacated">{t('common.vacated')}</option>
               </select>
             </div>
             {loading ? <TableSkeleton cols={7} hasAvatar /> : (
@@ -500,33 +442,33 @@ export default function TenantsPage() {
                 <table className="w-full min-w-175 text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-700">
-                      {['NAME', 'PHONE NUMBER', 'ROOM', 'COT', 'MOVE-IN DATE', 'STATUS', ''].map((h, i) => (
+                      {[t('tenants.nameHeader'), t('tenants.phoneHeader'), t('tenants.roomHeader'), t('tenants.cotHeader'), t('tenants.moveInHeader'), t('tenants.statusHeader'), ''].map((h, i) => (
                         <th key={i} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-10 text-gray-400">No tenants found.</td></tr>
-                    ) : filtered.map((t) => (
-                      <tr key={t.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <tr><td colSpan={7} className="text-center py-10 text-gray-400">{t('tenants.noTenantsFound')}</td></tr>
+                    ) : filtered.map((tenant) => (
+                      <tr key={tenant.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">{initials(t.name)}</div>
-                            <span className="font-medium">{t.name}</span>
+                            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">{initials(tenant.name)}</div>
+                            <span className="font-medium">{tenant.name}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-gray-500">{t.phone}</td>
-                        <td className="px-5 py-4">{roomMap[t.room_id] ?? '—'}</td>
-                        <td className="px-5 py-4 text-gray-500">{t.cot_number ?? '—'}</td>
-                        <td className="px-5 py-4 text-gray-500">{fmtDateLong(t.move_in_date)}</td>
+                        <td className="px-5 py-4 text-gray-500">{tenant.phone}</td>
+                        <td className="px-5 py-4">{roomMap[tenant.room_id] ?? '—'}</td>
+                        <td className="px-5 py-4 text-gray-500">{tenant.cot_number ?? '—'}</td>
+                        <td className="px-5 py-4 text-gray-500">{fmtDateLong(tenant.move_in_date)}</td>
                         <td className="px-5 py-4">
-                          <span className={t.status === 'active' ? 'bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full' : 'bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full'}>
-                            {t.status === 'active' ? 'Active' : 'Vacated'}
+                          <span className={tenant.status === 'active' ? 'bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full' : 'bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full'}>
+                            {tenant.status === 'active' ? t('tenants.active') : t('common.vacated')}
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <button onClick={() => router.push(`/dashboard/tenants/${t.id}`)} className="text-gray-400 hover:text-gray-700">
+                          <button onClick={() => router.push(`/dashboard/tenants/${tenant.id}`)} className="text-gray-400 hover:text-gray-700">
                             <Eye className="w-4 h-4" />
                           </button>
                         </td>
@@ -536,7 +478,7 @@ export default function TenantsPage() {
                 </table>
                 {filtered.length > 0 && (
                   <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
-                    Showing {filtered.length} of {tenants.length} tenants
+                    {t('tenants.showing', { shown: filtered.length, total: tenants.length })}
                   </div>
                 )}
               </div>
@@ -551,27 +493,27 @@ export default function TenantsPage() {
               <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                 <button onClick={() => setCollectFilter('pending')}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'pending' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500'}`}>
-                  Pending {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
+                  {t('tenants.pendingLabel')} {pendingCount > 0 && <span className="ml-1 text-red-500">({pendingCount})</span>}
                 </button>
                 <button onClick={() => setCollectFilter('all')}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${collectFilter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500'}`}>
-                  All
+                  {t('tenants.allLabel')}
                 </button>
               </div>
               <button onClick={loadCollect} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-3 py-1.5 rounded-lg">
-                <RefreshCw className="w-3.5 h-3.5" />Refresh
+                <RefreshCw className="w-3.5 h-3.5" />{t('common.refresh')}
               </button>
             </div>
             {collectLoading ? <TableSkeleton cols={5} /> : visibleCollect.length === 0 ? (
               <div className="text-center py-16 text-gray-400 text-sm">
-                {collectFilter === 'pending' ? 'All rent collected this month!' : 'No records for this month.'}
+                {collectFilter === 'pending' ? t('tenants.allCollectedThisMonth') : t('tenants.noRecordsThisMonth')}
               </div>
             ) : (
               <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
                 <table className="w-full min-w-150 text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-700">
-                      {['TENANT', 'ROOM', 'PERIOD', 'AMOUNT', 'DUE DATE', 'STATUS', 'ACTION'].map((h) => (
+                      {[t('tenants.tenantHeader'), t('tenants.roomHeader'), t('tenants.periodHeader'), t('tenants.amountHeader'), t('tenants.dueDateHeader'), t('tenants.statusHeader'), t('tenants.actionHeader')].map((h) => (
                         <th key={h} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
                       ))}
                     </tr>
@@ -594,15 +536,15 @@ export default function TenantsPage() {
                         <td className="px-5 py-4 text-gray-500">{new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                         <td className="px-5 py-4">
                           {r.status === 'paid'
-                            ? <span className="bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">Paid</span>
-                            : <span className="bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1 rounded-full">Pending</span>}
+                            ? <span className="bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">{t('common.paid')}</span>
+                            : <span className="bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1 rounded-full">{t('common.pending')}</span>}
                         </td>
                         <td className="px-5 py-4">
                           {r.status === 'pending' && (
                             <div className="flex items-center gap-2">
                               <button onClick={() => { setPayDialog({ id: r.id, name: r.tenant_name }); setPayMode('cash') }}
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-medium">
-                                <CheckCircle className="w-3.5 h-3.5" />Mark Paid
+                                <CheckCircle className="w-3.5 h-3.5" />{t('tenants.markPaid')}
                               </button>
                               <button onClick={() => sendWhatsApp(r)} className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600">
                                 <MessageCircle className="w-3.5 h-3.5 text-white" />
@@ -615,7 +557,7 @@ export default function TenantsPage() {
                   </tbody>
                 </table>
                 <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
-                  {collectRecords.filter((r) => r.status === 'paid').length} of {collectRecords.length} collected this month
+                  {t('tenants.collectedCount', { paid: collectRecords.filter((r) => r.status === 'paid').length, total: collectRecords.length })}
                 </div>
               </div>
             )}
@@ -626,24 +568,24 @@ export default function TenantsPage() {
       {/* Mark Paid dialog */}
       <Dialog open={!!payDialog} onOpenChange={(v) => { if (!v) setPayDialog(null) }}>
         <DialogContent className="sm:max-w-xs">
-          <DialogHeader><DialogTitle>Mark as Paid</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('rent.markAsPaid')}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
-            <p className="text-sm text-gray-500">Recording payment for <span className="font-medium text-black dark:text-white">{payDialog?.name}</span></p>
+            <p className="text-sm text-gray-500">{t('rent.recordingPaymentFor')} <span className="font-medium text-black dark:text-white">{payDialog?.name}</span></p>
             <div>
-              <label className="block text-sm font-medium mb-1">Payment Mode</label>
+              <label className="block text-sm font-medium mb-1">{t('rent.paymentMode')}</label>
               <select value={payMode} onChange={(e) => setPayMode(e.target.value)}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white">
-                <option value="cash">Cash</option>
-                <option value="upi">UPI</option>
-                <option value="bank">Bank Transfer</option>
+                <option value="cash">{t('rent.cash')}</option>
+                <option value="upi">{t('rent.upi')}</option>
+                <option value="bank">{t('rent.bankTransfer')}</option>
               </select>
             </div>
             <div className="flex gap-2 pt-1">
               <button onClick={() => setPayDialog(null)}
-                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('common.cancel')}</button>
               <button onClick={handleMarkPaid} disabled={marking}
                 className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
-                {marking ? 'Saving...' : 'Confirm'}
+                {marking ? t('common.savingDots') : t('common.confirm')}
               </button>
             </div>
           </div>

@@ -12,7 +12,7 @@ const LANGS = [
   { code: 'hi', label: 'हिंदी' },
 ]
 
-type PropertyItem = { id: string; name: string }
+type PropertyItem = { id: string; name: string; address: string | null }
 
 export function DashboardHeader({
   orgName,
@@ -91,31 +91,79 @@ export function DashboardHeader({
           <div ref={propRef} className="relative">
             <button
               onClick={() => setPropOpen(v => !v)}
-              className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              className={cn(
+                'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors',
+                propOpen
+                  ? 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                  : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+              )}
             >
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
-              <ChevronDown className="w-3.5 h-3.5 shrink-0 text-gray-500 dark:text-gray-400" />
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                  {activeProperty?.name ?? orgName}
+                </p>
+                {activeProperty?.address && (
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate leading-tight max-w-48">
+                    {activeProperty.address}
+                  </p>
+                )}
+              </div>
+              <ChevronDown className={cn('w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500 transition-transform', propOpen && 'rotate-180')} />
             </button>
+
             {propOpen && (
-              <div className="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 min-w-48 z-50">
-                {properties.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => selectProperty(p.id)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-200"
-                  >
-                    <span className="truncate">{p.name}</span>
-                    {activePropertyId === p.id && <Check className="w-3.5 h-3.5 text-black dark:text-white shrink-0" />}
-                  </button>
-                ))}
+              <div className="absolute left-0 top-full mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
+                  <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Switch Property</p>
+                </div>
+                <div className="p-1.5 flex flex-col gap-0.5">
+                  {properties.map(p => {
+                    const isActive = activePropertyId === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => selectProperty(p.id)}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
+                          isActive
+                            ? 'bg-gray-100 dark:bg-gray-800'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                          isActive ? 'bg-black dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
+                        )}>
+                          <MapPin className={cn('w-3.5 h-3.5', isActive ? 'text-white dark:text-black' : 'text-gray-400 dark:text-gray-400')} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn('text-sm font-semibold truncate', isActive ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300')}>
+                            {p.name}
+                          </p>
+                          {p.address ? (
+                            <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate leading-tight">{p.address}</p>
+                          ) : (
+                            <p className="text-[11px] text-gray-300 dark:text-gray-600 leading-tight">No address set</p>
+                          )}
+                        </div>
+                        {isActive && <Check className="w-4 h-4 text-black dark:text-white shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 truncate">
-            <MapPin className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate font-semibold text-gray-900 dark:text-white">{orgName}</span>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">{orgName}</p>
+              {activeProperty?.address && (
+                <p className="text-[11px] text-gray-400 truncate leading-tight">{activeProperty.address}</p>
+              )}
+            </div>
           </div>
         )}
       </div>

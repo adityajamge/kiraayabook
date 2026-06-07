@@ -21,7 +21,7 @@ const LANGS = [
   { code: 'hi', label: 'हिंदी' },
 ]
 
-type PropertyItem = { id: string; name: string }
+type PropertyItem = { id: string; name: string; address: string | null }
 
 export function BottomNav({
   language,
@@ -153,22 +153,39 @@ export function BottomNav({
                   <MapPin className="w-4 h-4 text-gray-400" />
                   <span className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('properties.title')}</span>
                 </div>
-                <div className="flex flex-col gap-1">
-                  {properties.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => selectProperty(p.id)}
-                      className={cn(
-                        'flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                        currentPropertyId === p.id
-                          ? 'bg-black dark:bg-white text-white dark:text-black'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                      )}
-                    >
-                      <span className="truncate">{p.name}</span>
-                      {currentPropertyId === p.id && <Check className="w-3.5 h-3.5 shrink-0" />}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-1.5">
+                  {properties.map(p => {
+                    const isActive = currentPropertyId === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => selectProperty(p.id)}
+                        className={cn(
+                          'flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
+                          isActive
+                            ? 'bg-black dark:bg-white'
+                            : 'bg-gray-100 dark:bg-gray-800'
+                        )}
+                      >
+                        <MapPin className={cn('w-4 h-4 shrink-0', isActive ? 'text-white dark:text-black' : 'text-gray-400 dark:text-gray-500')} />
+                        <div className="flex-1 min-w-0">
+                          <p className={cn('text-sm font-semibold truncate leading-tight', isActive ? 'text-white dark:text-black' : 'text-gray-800 dark:text-gray-200')}>
+                            {p.name}
+                          </p>
+                          {p.address ? (
+                            <p className={cn('text-[11px] truncate leading-tight mt-0.5', isActive ? 'text-white/70 dark:text-black/60' : 'text-gray-400 dark:text-gray-500')}>
+                              {p.address}
+                            </p>
+                          ) : (
+                            <p className={cn('text-[11px] leading-tight mt-0.5', isActive ? 'text-white/50 dark:text-black/40' : 'text-gray-300 dark:text-gray-600')}>
+                              No address set
+                            </p>
+                          )}
+                        </div>
+                        {isActive && <Check className="w-4 h-4 shrink-0 text-white dark:text-black" />}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}

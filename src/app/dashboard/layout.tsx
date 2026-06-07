@@ -25,6 +25,7 @@ type OrgData = {
 type PropertyItem = {
   id: string
   name: string
+  address: string | null
 }
 
 const allMessages: Record<string, typeof enMessages> = {
@@ -73,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (payload.role === 'owner') {
     const props = await db
-      .select({ id: properties.id, name: properties.name })
+      .select({ id: properties.id, name: properties.name, address: properties.address })
       .from(properties)
       .where(eq(properties.org_id, payload.org_id))
       .orderBy(properties.created_at)

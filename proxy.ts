@@ -31,12 +31,18 @@ export async function proxy(request: NextRequest) {
   if (payload.role === 'owner') {
     let propertyId = request.cookies.get('kiraayabook_property')?.value ?? null
     if (!propertyId) {
-      const [first] = await db
-        .select({ id: properties.id })
-        .from(properties)
-        .where(eq(properties.org_id, payload.org_id))
-        .limit(1)
-      propertyId = first?.id ?? null
+      try {
+        const [first] = await db
+          .select({ id: properties.id })
+          .from(properties)
+          .where(eq(properties.org_id, payload.org_id))
+          .orderBy(properties.created_at)
+          .limit(1)
+        propertyId = first?.id ?? null
+      } catch {
+        // DB unavailable (cold start / timeout) — skip fallback, cookie-based
+        // sync in DashboardHeader will set the cookie on next render
+      }
     }
     if (propertyId) headers.set('x-property-id', propertyId)
   } else if (payload.property_id) {

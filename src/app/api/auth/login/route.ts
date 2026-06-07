@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       .select({ id: properties.id })
       .from(properties)
       .where(eq(properties.org_id, user.org_id))
+      .orderBy(properties.created_at)
       .limit(1)
 
     if (firstProp) {

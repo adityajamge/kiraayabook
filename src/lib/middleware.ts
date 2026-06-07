@@ -31,7 +31,13 @@ export async function getOrgId(req: Request): Promise<string> {
 }
 
 export function getPropertyId(req: Request): string | null {
-  return req.headers.get('x-property-id')
+  const fromHeader = req.headers.get('x-property-id')
+  if (fromHeader) return fromHeader
+  // Fallback: proxy.ts couldn't inject the header (e.g. Neon cold start in edge
+  // runtime). Read the cookie directly — it was validated when set by
+  // select-property or the login route, so this is equally safe.
+  const cookieHeader = req.headers.get('cookie') ?? ''
+  return getCookieValue(cookieHeader, 'kiraayabook_property')
 }
 
 export async function getAuthContext(req: Request): Promise<JwtPayload> {

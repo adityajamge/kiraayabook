@@ -37,23 +37,17 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Phone number must be exactly 10 digits.' }, { status: 400 })
   }
 
-  const [room] = await db
-    .select({ property_id: rooms.property_id })
-    .from(rooms)
-    .where(and(eq(rooms.id, room_id), eq(rooms.org_id, org_id)))
+  const [[room], [existing]] = await Promise.all([
+    db.select({ property_id: rooms.property_id })
+      .from(rooms)
+      .where(and(eq(rooms.id, room_id), eq(rooms.org_id, org_id))),
+    db.select({ id: tenants.id })
+      .from(tenants)
+      .where(and(eq(tenants.org_id, org_id), eq(tenants.phone, phone))),
+  ])
 
-  if (!room) {
-    return Response.json({ error: 'Room not found.' }, { status: 404 })
-  }
-
-  const [existing] = await db
-    .select({ id: tenants.id })
-    .from(tenants)
-    .where(and(eq(tenants.org_id, org_id), eq(tenants.phone, phone)))
-
-  if (existing) {
-    return Response.json({ error: 'A tenant with this phone number already exists.' }, { status: 409 })
-  }
+  if (!room) return Response.json({ error: 'Room not found.' }, { status: 404 })
+  if (existing) return Response.json({ error: 'A tenant with this phone number already exists.' }, { status: 409 })
 
   const [tenant] = await db
     .insert(tenants)

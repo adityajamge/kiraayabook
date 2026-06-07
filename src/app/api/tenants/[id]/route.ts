@@ -32,13 +32,16 @@ export async function PATCH(
   const property_id = getPropertyId(request)
   const { id } = await params
   const body = await request.json()
-  const normalized: Record<string, unknown> = {
-    ...body,
-    email:         body.email || undefined,
-    cot_number:    body.cot_number || undefined,
-    move_out_date: body.move_out_date || undefined,
-    rent_amount:   body.rent_amount ? Number(body.rent_amount) : undefined,
-  }
+  const normalized: Partial<typeof tenants.$inferInsert> = {}
+  if (body.name          !== undefined) normalized.name          = body.name
+  if (body.phone         !== undefined) normalized.phone         = body.phone
+  if (body.email         !== undefined) normalized.email         = body.email         || undefined
+  if (body.cot_number    !== undefined) normalized.cot_number    = body.cot_number    || undefined
+  if (body.move_in_date  !== undefined) normalized.move_in_date  = body.move_in_date
+  if (body.move_out_date !== undefined) normalized.move_out_date = body.move_out_date || undefined
+  if (body.status        !== undefined) normalized.status        = body.status
+  if (body.rent_amount   !== undefined) normalized.rent_amount   = body.rent_amount ? Number(body.rent_amount) : undefined
+  if (body.room_id       !== undefined) normalized.room_id       = body.room_id
 
   if (body.room_id) {
     const [room] = await db

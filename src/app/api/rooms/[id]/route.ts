@@ -33,9 +33,15 @@ export async function PATCH(
   const { id } = await params
   const body = await request.json()
 
+  const patch: Partial<typeof rooms.$inferInsert> = {}
+  if (body.room_number !== undefined) patch.room_number = body.room_number
+  if (body.capacity    !== undefined) patch.capacity    = Number(body.capacity)
+  if (body.floor       !== undefined) patch.floor       = body.floor || undefined
+  if (body.type        !== undefined) patch.type        = body.type  || undefined
+
   const [room] = await db
     .update(rooms)
-    .set(body)
+    .set(patch)
     .where(and(
       eq(rooms.id, id),
       eq(rooms.org_id, org_id),

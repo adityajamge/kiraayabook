@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, date, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, date, timestamp, boolean, index } from 'drizzle-orm/pg-core'
 
 export const organisations = pgTable('organisations', {
   id:                     uuid('id').defaultRandom().primaryKey(),
@@ -29,7 +29,9 @@ export const properties = pgTable('properties', {
   address:    text('address'),
   phones:     text('phones').array(),
   created_at: timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('properties_org_id_idx').on(t.org_id),
+])
 
 export const users = pgTable('users', {
   id:            uuid('id').defaultRandom().primaryKey(),
@@ -40,7 +42,9 @@ export const users = pgTable('users', {
   name:          text('name'),
   role:          text('role').notNull().default('owner'),
   created_at:    timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('users_org_id_idx').on(t.org_id),
+])
 
 export const rooms = pgTable('rooms', {
   id:          uuid('id').defaultRandom().primaryKey(),
@@ -51,7 +55,9 @@ export const rooms = pgTable('rooms', {
   floor:       text('floor'),
   type:        text('type'),
   created_at:  timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('rooms_org_id_property_id_idx').on(t.org_id, t.property_id),
+])
 
 export const tenants = pgTable('tenants', {
   id:            uuid('id').defaultRandom().primaryKey(),
@@ -67,7 +73,10 @@ export const tenants = pgTable('tenants', {
   status:        text('status').notNull().default('active'),
   rent_amount:   integer('rent_amount'),
   created_at:    timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('tenants_org_id_phone_idx').on(t.org_id, t.phone),
+  index('tenants_org_id_status_property_id_idx').on(t.org_id, t.status, t.property_id),
+])
 
 export const rent_records = pgTable('rent_records', {
   id:           uuid('id').defaultRandom().primaryKey(),
@@ -83,7 +92,10 @@ export const rent_records = pgTable('rent_records', {
   status:       text('status').notNull().default('pending'),
   bill_no:      integer('bill_no'),
   created_at:   timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('rent_records_org_id_status_due_date_idx').on(t.org_id, t.status, t.due_date),
+  index('rent_records_org_id_tenant_id_due_date_idx').on(t.org_id, t.tenant_id, t.due_date),
+])
 
 export const platform_config = pgTable('platform_config', {
   key:   text('key').primaryKey(),
@@ -98,7 +110,9 @@ export const documents = pgTable('documents', {
   doc_type:    text('doc_type').notNull(),
   file_url:    text('file_url').notNull(),
   uploaded_at: timestamp('uploaded_at').defaultNow(),
-})
+}, (t) => [
+  index('documents_org_id_tenant_id_idx').on(t.org_id, t.tenant_id),
+])
 
 export const expenses = pgTable('expenses', {
   id:          uuid('id').defaultRandom().primaryKey(),
@@ -108,4 +122,6 @@ export const expenses = pgTable('expenses', {
   amount:      integer('amount').notNull(),
   date:        date('date').notNull(),
   created_at:  timestamp('created_at').defaultNow(),
-})
+}, (t) => [
+  index('expenses_org_id_date_idx').on(t.org_id, t.date),
+])

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { tenants, rooms } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
 export async function GET(
@@ -8,12 +8,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { id } = await params
 
   const [tenant] = await db
     .select()
     .from(tenants)
-    .where(and(eq(tenants.id, id), eq(tenants.org_id, org_id)))
+    .where(and(
+      eq(tenants.id, id),
+      eq(tenants.org_id, org_id),
+      ...(property_id ? [eq(tenants.property_id, property_id)] : []),
+    ))
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(tenant)
@@ -24,6 +29,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { id } = await params
   const body = await request.json()
   const normalized: Record<string, unknown> = {
@@ -47,7 +53,11 @@ export async function PATCH(
   const [tenant] = await db
     .update(tenants)
     .set(normalized)
-    .where(and(eq(tenants.id, id), eq(tenants.org_id, org_id)))
+    .where(and(
+      eq(tenants.id, id),
+      eq(tenants.org_id, org_id),
+      ...(property_id ? [eq(tenants.property_id, property_id)] : []),
+    ))
     .returning()
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })
@@ -59,11 +69,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { id } = await params
 
   const [tenant] = await db
     .delete(tenants)
-    .where(and(eq(tenants.id, id), eq(tenants.org_id, org_id)))
+    .where(and(
+      eq(tenants.id, id),
+      eq(tenants.org_id, org_id),
+      ...(property_id ? [eq(tenants.property_id, property_id)] : []),
+    ))
     .returning()
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })

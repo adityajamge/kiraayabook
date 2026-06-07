@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { tenants, rent_records } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and, sql } from 'drizzle-orm'
 
 function localDateStr(d: Date): string {
@@ -23,11 +23,20 @@ function currentCycleDates(moveInDate: string): { due_date: string; period_start
 
 export async function POST(request: Request) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
+
+  if (!property_id) {
+    return Response.json({ error: 'property_id is required' }, { status: 400 })
+  }
 
   const activeTenants = await db
     .select()
     .from(tenants)
-    .where(and(eq(tenants.org_id, org_id), eq(tenants.status, 'active')))
+    .where(and(
+      eq(tenants.org_id, org_id),
+      eq(tenants.property_id, property_id),
+      eq(tenants.status, 'active'),
+    ))
 
   for (const tenant of activeTenants) {
     if (!tenant.rent_amount) continue
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Return all current-cycle records for this org
+  // Return current-cycle records for the selected property only
   const rows = await db.execute(sql`
     SELECT rr.*, t.name AS tenant_name, t.phone, t.room_id, t.rent_amount,
            r.room_number
@@ -64,6 +73,7 @@ export async function POST(request: Request) {
     JOIN tenants t ON t.id = rr.tenant_id
     JOIN rooms r   ON r.id = t.room_id
     WHERE rr.org_id = ${org_id}
+      AND rr.property_id = ${property_id}
       AND TO_CHAR(rr.due_date, 'YYYY-MM') = TO_CHAR(NOW(), 'YYYY-MM')
     ORDER BY rr.status DESC, t.name ASC
   `)

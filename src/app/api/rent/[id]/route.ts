@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { rent_records } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
 export async function PATCH(
@@ -8,6 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const org_id = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { id } = await params
   const body = await request.json()
 
@@ -24,7 +25,11 @@ export async function PATCH(
       paid_date: today,
       ...(payment_mode ? { payment_mode } : {}),
     })
-    .where(and(eq(rent_records.id, id), eq(rent_records.org_id, org_id)))
+    .where(and(
+      eq(rent_records.id, id),
+      eq(rent_records.org_id, org_id),
+      ...(property_id ? [eq(rent_records.property_id, property_id)] : []),
+    ))
     .returning()
 
   if (!record) return Response.json({ error: 'Not found' }, { status: 404 })

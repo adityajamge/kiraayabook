@@ -78,7 +78,7 @@ export function DashboardHeader({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ property_id }),
     })
-    router.refresh()
+    window.location.reload()
   }
 
   const activeProperty = properties.find(p => p.id === activePropertyId)

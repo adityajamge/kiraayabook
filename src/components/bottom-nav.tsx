@@ -52,13 +52,12 @@ export function BottomNav({
   }
 
   const selectProperty = async (property_id: string | null) => {
-    setCurrentPropertyId(property_id)
     await fetch('/api/auth/select-property', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ property_id }),
     })
-    router.refresh()
+    window.location.reload()
   }
 
   return (

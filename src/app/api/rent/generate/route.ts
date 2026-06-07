@@ -38,31 +38,24 @@ export async function POST(request: Request) {
       eq(tenants.status, 'active'),
     ))
 
-  for (const tenant of activeTenants) {
-    if (!tenant.rent_amount) continue
-
-    const { due_date, period_start, period_end } = currentCycleDates(tenant.move_in_date)
-
-    const [existing] = await db
-      .select({ id: rent_records.id })
-      .from(rent_records)
-      .where(and(
-        eq(rent_records.tenant_id, tenant.id),
-        eq(rent_records.due_date, due_date),
-      ))
-
-    if (!existing) {
-      await db.insert(rent_records).values({
+  const records = activeTenants
+    .filter(t => t.rent_amount)
+    .map(tenant => {
+      const { due_date, period_start, period_end } = currentCycleDates(tenant.move_in_date)
+      return {
         org_id,
         property_id:  tenant.property_id,
         tenant_id:    tenant.id,
-        amount:       tenant.rent_amount,
+        amount:       tenant.rent_amount!,
         period_start,
         period_end,
         due_date,
-        status:       'pending',
-      })
-    }
+        status:       'pending' as const,
+      }
+    })
+
+  if (records.length > 0) {
+    await db.insert(rent_records).values(records).onConflictDoNothing()
   }
 
   // Return current-cycle records for the selected property only

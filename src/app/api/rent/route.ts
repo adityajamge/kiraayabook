@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { rent_records, tenants } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, count } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
@@ -27,18 +27,19 @@ export async function GET(request: Request) {
   }
 
   const tenant_id = searchParams.get('tenant_id')
+  const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 200)
+  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0',  10), 0)
 
   const conditions = [eq(rent_records.org_id, org_id)]
-  if (tenant_id) conditions.push(eq(rent_records.tenant_id, tenant_id))
+  if (tenant_id)   conditions.push(eq(rent_records.tenant_id, tenant_id))
   if (property_id) conditions.push(eq(rent_records.property_id, property_id))
 
-  const rows = await db
-    .select()
-    .from(rent_records)
-    .where(and(...conditions))
-    .orderBy(rent_records.due_date)
+  const [countRows, rows] = await Promise.all([
+    db.select({ total: count() }).from(rent_records).where(and(...conditions)),
+    db.select().from(rent_records).where(and(...conditions)).orderBy(rent_records.due_date).limit(limit).offset(offset),
+  ])
 
-  return Response.json(rows)
+  return Response.json({ data: rows, total: countRows[0].total, limit, offset })
 }
 
 export async function POST(request: Request) {

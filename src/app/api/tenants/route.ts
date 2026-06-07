@@ -1,25 +1,26 @@
 import { db } from '@/lib/db'
 import { tenants, rooms } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, count } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
   const room_id = searchParams.get('room_id')
+  const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 200)
+  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0',  10), 0)
 
   const conditions = [eq(tenants.org_id, org_id)]
-  if (room_id) conditions.push(eq(tenants.room_id, room_id))
+  if (room_id)     conditions.push(eq(tenants.room_id, room_id))
   if (property_id) conditions.push(eq(tenants.property_id, property_id))
 
-  const rows = await db
-    .select()
-    .from(tenants)
-    .where(and(...conditions))
-    .orderBy(tenants.created_at)
+  const [countRows, rows] = await Promise.all([
+    db.select({ total: count() }).from(tenants).where(and(...conditions)),
+    db.select().from(tenants).where(and(...conditions)).orderBy(tenants.created_at).limit(limit).offset(offset),
+  ])
 
-  return Response.json(rows)
+  return Response.json({ data: rows, total: countRows[0].total, limit, offset })
 }
 
 export async function POST(request: Request) {

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, date, timestamp, boolean, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, date, timestamp, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const organisations = pgTable('organisations', {
   id:                     uuid('id').defaultRandom().primaryKey(),
@@ -95,6 +95,7 @@ export const rent_records = pgTable('rent_records', {
 }, (t) => [
   index('rent_records_org_id_status_due_date_idx').on(t.org_id, t.status, t.due_date),
   index('rent_records_org_id_tenant_id_due_date_idx').on(t.org_id, t.tenant_id, t.due_date),
+  uniqueIndex('rent_records_tenant_id_due_date_uidx').on(t.tenant_id, t.due_date),
 ])
 
 export const platform_config = pgTable('platform_config', {

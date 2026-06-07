@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
+import { users, properties } from '@/lib/db/schema'
 import { signJwt } from '@/lib/auth'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
@@ -31,12 +31,35 @@ export async function POST(request: Request) {
   })
 
   const response = NextResponse.json({ ok: true })
-  response.cookies.set('kiraayabook_token', token, {
+
+  const cookieOptions = {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     path: '/',
-    maxAge: 7 * 24 * 60 * 60,
     secure: process.env.NODE_ENV === 'production',
+  }
+
+  response.cookies.set('kiraayabook_token', token, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60,
   })
+
+  // For owners: pre-set the property cookie so proxy.ts never needs to query the DB
+  // on subsequent requests. Staff already have property_id locked in their JWT.
+  if (user.role === 'owner') {
+    const [firstProp] = await db
+      .select({ id: properties.id })
+      .from(properties)
+      .where(eq(properties.org_id, user.org_id))
+      .limit(1)
+
+    if (firstProp) {
+      response.cookies.set('kiraayabook_property', firstProp.id, {
+        ...cookieOptions,
+        maxAge: 30 * 24 * 60 * 60,
+      })
+    }
+  }
+
   return response
 }

@@ -52,6 +52,10 @@ export async function POST(request: Request) {
     return Response.json({ error: 'tenant_id, amount, period_start, period_end, and due_date are required' }, { status: 400 })
   }
 
+  if (payment_mode && !['cash', 'online', 'cheque'].includes(payment_mode)) {
+    return Response.json({ error: 'payment_mode must be cash, online, or cheque' }, { status: 400 })
+  }
+
   const [tenant] = await db
     .select({ property_id: tenants.property_id })
     .from(tenants)

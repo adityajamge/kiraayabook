@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyJwt } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { properties } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get('kiraayabook_token')?.value
@@ -26,7 +29,15 @@ export async function proxy(request: NextRequest) {
 
   // Owner: use the property selected via cookie; staff: use property locked in JWT
   if (payload.role === 'owner') {
-    const propertyId = request.cookies.get('kiraayabook_property')?.value
+    let propertyId = request.cookies.get('kiraayabook_property')?.value ?? null
+    if (!propertyId) {
+      const [first] = await db
+        .select({ id: properties.id })
+        .from(properties)
+        .where(eq(properties.org_id, payload.org_id))
+        .limit(1)
+      propertyId = first?.id ?? null
+    }
     if (propertyId) headers.set('x-property-id', propertyId)
   } else if (payload.property_id) {
     headers.set('x-property-id', payload.property_id)

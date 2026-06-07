@@ -12,6 +12,9 @@ export async function PATCH(
   const body = await request.json()
 
   const { payment_mode } = body
+  if (payment_mode && !['cash', 'online', 'cheque'].includes(payment_mode)) {
+    return Response.json({ error: 'payment_mode must be cash, online, or cheque' }, { status: 400 })
+  }
   const today = new Date().toISOString().split('T')[0]
 
   const [record] = await db

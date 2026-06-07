@@ -14,8 +14,9 @@ export async function GET(request: Request) {
     return Array.isArray(maybeRows) ? maybeRows : []
   }
 
-  const pf = property_id ? sql` AND r.property_id = ${property_id}` : sql``
-  const pfT = property_id ? sql` AND property_id = ${property_id}` : sql``
+  const pf   = property_id ? sql` AND r.property_id  = ${property_id}` : sql``
+  const pfT  = property_id ? sql` AND property_id   = ${property_id}` : sql``
+  const pfRR = property_id ? sql` AND rr.property_id = ${property_id}` : sql``
 
   const [
     roomStatsRaw,
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
       FROM rent_records rr
       JOIN tenants t ON t.id = rr.tenant_id
       JOIN rooms r   ON r.id  = t.room_id
-      WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending' ${pfT}
+      WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending' ${pfRR}
       ORDER BY rr.amount DESC
     `),
     db.execute(sql`

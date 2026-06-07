@@ -73,10 +73,10 @@ export default function TenantsPage() {
   useEffect(() => { loadAll() }, [])
 
   const loadAll = async () => {
-    const [tr, rr, sr] = await Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings')])
-    setTenants(await tr.json())
+    const [tr, rr, sr] = await Promise.all([fetch('/api/tenants?limit=500'), fetch('/api/rooms?limit=200'), fetch('/api/settings')])
+    setTenants((await tr.json()).data ?? [])
     const roomData = await rr.json()
-    setRooms(roomData.map((r: Room) => ({ id: r.id, room_number: r.room_number })))
+    setRooms((roomData.data ?? []).map((r: Room) => ({ id: r.id, room_number: r.room_number })))
     const settings = await sr.json()
     if (settings?.name) setOrgName(settings.name)
     setLoading(false)

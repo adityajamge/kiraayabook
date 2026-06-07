@@ -70,18 +70,18 @@ export default function RentPage() {
   const [billRecord, setBillRecord] = useState<RentRecord | null>(null)
 
   useEffect(() => {
-    Promise.all([fetch('/api/tenants'), fetch('/api/rooms'), fetch('/api/settings'), fetch('/api/properties')])
+    Promise.all([fetch('/api/tenants?limit=500'), fetch('/api/rooms?limit=200'), fetch('/api/settings'), fetch('/api/properties')])
       .then(([tr, rr, sr, pr]) => Promise.all([tr.json(), rr.json(), sr.json(), pr.json()]))
-      .then(([tn, r, s, p]) => { setTenants(tn); setRooms(r); setOrg(s); setProperties(p) })
+      .then(([tn, r, s, p]) => { setTenants(tn.data ?? []); setRooms(r.data ?? []); setOrg(s); setProperties(p) })
   }, [])
 
   useEffect(() => { loadRecords() }, [monthFilter])
 
   const loadRecords = async () => {
     setLoading(true)
-    const res = await fetch('/api/rent')
-    const all: RentRecord[] = await res.json()
-    setRecords(monthFilter ? all.filter((r) => r.due_date.slice(0, 7) === monthFilter) : all)
+    const url = monthFilter ? `/api/rent?due_month=${monthFilter}&limit=500` : '/api/rent?limit=500'
+    const res = await fetch(url)
+    setRecords((await res.json()).data ?? [])
     setLoading(false)
   }
 

@@ -38,9 +38,9 @@ export default function DocumentsPage() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    const [dr, tr] = await Promise.all([fetch('/api/documents'), fetch('/api/tenants')])
+    const [dr, tr] = await Promise.all([fetch('/api/documents'), fetch('/api/tenants?limit=500')])
     setDocs(await dr.json())
-    setTenants(await tr.json())
+    setTenants((await tr.json()).data ?? [])
     setLoading(false)
   }
 

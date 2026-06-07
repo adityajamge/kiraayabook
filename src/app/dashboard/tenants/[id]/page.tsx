@@ -75,8 +75,8 @@ export default function TenantDetailPage() {
     const [tr, dr, rr, rentr, sr, pr] = await Promise.all([
       fetch(`/api/tenants/${id}`),
       fetch(`/api/documents?tenant_id=${id}`),
-      fetch('/api/rooms'),
-      fetch(`/api/rent?tenant_id=${id}`),
+      fetch('/api/rooms?limit=200'),
+      fetch(`/api/rent?tenant_id=${id}&limit=200`),
       fetch('/api/settings'),
       fetch('/api/properties'),
     ])
@@ -84,8 +84,8 @@ export default function TenantDetailPage() {
     setTenant(tenantData)
     setEditForm(tenantToForm(tenantData))
     setDocs(await dr.json())
-    setRooms(await rr.json())
-    setRentRecords(await rentr.json())
+    setRooms((await rr.json()).data ?? [])
+    setRentRecords((await rentr.json()).data ?? [])
     setOrg(await sr.json())
     const allProperties: Property[] = await pr.json()
     setProperty(allProperties.find(p => p.id === tenantData.property_id) ?? null)

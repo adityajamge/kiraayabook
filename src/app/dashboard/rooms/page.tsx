@@ -47,8 +47,8 @@ export default function RoomsPage() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    const r = await fetch('/api/rooms')
-    setRooms(await r.json())
+    const r = await fetch('/api/rooms?limit=200')
+    setRooms((await r.json()).data ?? [])
     setLoading(false)
   }
 
@@ -97,8 +97,9 @@ export default function RoomsPage() {
   const openView = async (room: Room) => {
     setViewRoom(room)
     setViewLoading(true)
-    const res = await fetch(`/api/tenants?room_id=${room.id}`)
-    const data: RoomTenant[] = await res.json()
+    const res = await fetch(`/api/tenants?room_id=${room.id}&limit=50`)
+    const json = await res.json()
+    const data: RoomTenant[] = json.data ?? []
     setRoomTenants(data.filter((t) => t.status === 'active'))
     setViewLoading(false)
   }

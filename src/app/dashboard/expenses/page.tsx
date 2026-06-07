@@ -49,8 +49,8 @@ export default function ExpensesPage() {
 
   const load = async () => {
     setLoading(true)
-    const res = await fetch('/api/expenses')
-    const all: Expense[] = await res.json()
+    const res = await fetch('/api/expenses?limit=500')
+    const all: Expense[] = (await res.json()).data ?? []
     setExpenses(all.filter((e) => e.date.slice(0, 7) === month))
     setLoading(false)
   }

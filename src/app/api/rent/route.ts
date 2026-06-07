@@ -26,13 +26,15 @@ export async function GET(request: Request) {
     return Response.json((rows as any)[0])
   }
 
-  const tenant_id = searchParams.get('tenant_id')
-  const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 200)
+  const tenant_id  = searchParams.get('tenant_id')
+  const due_month  = searchParams.get('due_month')  // YYYY-MM — filters list by due_date month
+  const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 500)
   const offset = Math.max(parseInt(searchParams.get('offset') ?? '0',  10), 0)
 
   const conditions = [eq(rent_records.org_id, org_id)]
   if (tenant_id)   conditions.push(eq(rent_records.tenant_id, tenant_id))
   if (property_id) conditions.push(eq(rent_records.property_id, property_id))
+  if (due_month)   conditions.push(sql`TO_CHAR(${rent_records.due_date}, 'YYYY-MM') = ${due_month}`)
 
   const [countRows, rows] = await Promise.all([
     db.select({ total: count() }).from(rent_records).where(and(...conditions)),

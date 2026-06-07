@@ -71,6 +71,6 @@ export async function POST(request: Request) {
     ORDER BY rr.status DESC, t.name ASC
   `)
 
-  const records = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows ?? []
-  return Response.json(records)
+  const result = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows ?? []
+  return Response.json(result)
 }

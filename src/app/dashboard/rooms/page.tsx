@@ -25,7 +25,9 @@ interface RoomTenant {
 }
 
 const emptyForm = { room_number: '', capacity: '', floor: '', type: '' }
+const emptyBulkForm = { from: '', to: '', capacity: '', floor: '', type: '' }
 type Filter = 'all' | 'occupied' | 'vacant'
+type AddTab = 'single' | 'bulk'
 
 export default function RoomsPage() {
   const t = useT()
@@ -34,6 +36,8 @@ export default function RoomsPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Room | null>(null)
   const [form, setForm] = useState(emptyForm)
+  const [addTab, setAddTab] = useState<AddTab>('single')
+  const [bulkForm, setBulkForm] = useState(emptyBulkForm)
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
@@ -50,7 +54,7 @@ export default function RoomsPage() {
     setLoading(false)
   }
 
-  const openAdd = () => { setEditing(null); setForm(emptyForm); setOpen(true) }
+  const openAdd = () => { setEditing(null); setForm(emptyForm); setAddTab('single'); setBulkForm(emptyBulkForm); setOpen(true) }
 
   const openEdit = (room: Room) => {
     setEditing(room)
@@ -87,6 +91,44 @@ export default function RoomsPage() {
     load()
   }
 
+  const handleBulkSave = async () => {
+    const fromNum = parseInt(bulkForm.from, 10)
+    const toNum = parseInt(bulkForm.to, 10)
+    const cap = Number(bulkForm.capacity)
+    if (isNaN(fromNum) || isNaN(toNum) || fromNum > toNum) {
+      toast.error('Enter a valid range — From must be ≤ To.')
+      return
+    }
+    if (toNum - fromNum > 199) {
+      toast.error('You can bulk-add up to 200 rooms at once.')
+      return
+    }
+    if (isNaN(cap) || cap < 1 || cap > 20) {
+      toast.error('Capacity must be between 1 and 20.')
+      return
+    }
+    const roomsList = []
+    for (let i = fromNum; i <= toNum; i++) {
+      roomsList.push({ room_number: String(i), capacity: cap, floor: bulkForm.floor || null, type: bulkForm.type || null })
+    }
+    setSaving(true)
+    const res = await fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rooms: roomsList }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to save rooms.')
+      setSaving(false)
+      return
+    }
+    setSaving(false)
+    setOpen(false)
+    toast.success(`${roomsList.length} rooms added.`)
+    load()
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this room? This will fail if there are active tenants.')) return
     await fetch(`/api/rooms/${id}`, { method: 'DELETE' })
@@ -106,6 +148,7 @@ export default function RoomsPage() {
   }
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const setBulk = (k: string, v: string) => setBulkForm((f) => ({ ...f, [k]: v }))
 
   const filtered = useMemo(
     () => rooms.filter((r) => {
@@ -123,6 +166,89 @@ export default function RoomsPage() {
     const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0
     return { totalBeds, occupiedBeds, vacantBeds, occupancyPct }
   }, [rooms])
+
+  const fromNum = parseInt(bulkForm.from, 10)
+  const toNum = parseInt(bulkForm.to, 10)
+  const bulkCount = !isNaN(fromNum) && !isNaN(toNum) && toNum >= fromNum ? toNum - fromNum + 1 : 0
+
+  const bulkRoomForm = (
+    <div className="space-y-4 mt-2">
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="block text-sm font-medium mb-1.5">From <span className="text-red-500">*</span></label>
+          <input
+            type="number" inputMode="numeric"
+            value={bulkForm.from}
+            onChange={(e) => setBulk('from', e.target.value)}
+            placeholder="101"
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium mb-1.5">To <span className="text-red-500">*</span></label>
+          <input
+            type="number" inputMode="numeric"
+            value={bulkForm.to}
+            onChange={(e) => setBulk('to', e.target.value)}
+            placeholder="120"
+            className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+      </div>
+      {bulkCount > 0 && (
+        <p className="text-xs text-blue-600 dark:text-blue-400 -mt-1">
+          {bulkCount} room{bulkCount > 1 ? 's' : ''} will be created ({bulkForm.from} to {bulkForm.to})
+        </p>
+      )}
+      <div>
+        <label className="block text-sm font-medium mb-1.5">{t('rooms.capacity')} <span className="text-red-500">*</span></label>
+        <input
+          type="number" min="1" max="20" inputMode="numeric"
+          value={bulkForm.capacity}
+          onChange={(e) => setBulk('capacity', e.target.value)}
+          placeholder="e.g. 4"
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1.5">{t('rooms.floor')}</label>
+        <input
+          maxLength={50}
+          value={bulkForm.floor}
+          onChange={(e) => setBulk('floor', e.target.value)}
+          placeholder="e.g. Ground, 1st Floor"
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1.5">{t('rooms.type')}</label>
+        <select
+          value={bulkForm.type}
+          onChange={(e) => setBulk('type', e.target.value)}
+          className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 bg-white dark:bg-gray-800 dark:text-white"
+        >
+          <option value="">{t('rooms.selectType')}</option>
+          <option value="AC">AC</option>
+          <option value="Non-AC">Non-AC</option>
+        </select>
+      </div>
+      <div className="flex gap-3 pt-1">
+        <button
+          onClick={() => setOpen(false)}
+          className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          {t('common.cancel')}
+        </button>
+        <button
+          onClick={handleBulkSave}
+          disabled={saving || bulkCount === 0}
+          className="flex-1 bg-gray-900 text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-700 disabled:opacity-50"
+        >
+          {saving ? 'Adding…' : bulkCount > 0 ? `Add ${bulkCount} Rooms` : 'Add Rooms'}
+        </button>
+      </div>
+    </div>
+  )
 
   const roomForm = (
     <div className="space-y-4 mt-2">
@@ -218,7 +344,7 @@ export default function RoomsPage() {
           >
             <Search className="w-4 h-4" />
           </button>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm) } }}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm); setAddTab('single'); setBulkForm(emptyBulkForm) } }}>
             <DialogTrigger asChild>
               <button
                 onClick={openAdd}
@@ -231,7 +357,31 @@ export default function RoomsPage() {
               <DialogHeader>
                 <DialogTitle>{editing ? t('rooms.editRoom') : t('rooms.addRoom')}</DialogTitle>
               </DialogHeader>
-              {roomForm}
+              {!editing && (
+                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mt-1">
+                  <button
+                    onClick={() => setAddTab('single')}
+                    className={`flex-1 text-sm font-medium py-2 rounded-lg transition-colors ${
+                      addTab === 'single'
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    Single Room
+                  </button>
+                  <button
+                    onClick={() => setAddTab('bulk')}
+                    className={`flex-1 text-sm font-medium py-2 rounded-lg transition-colors ${
+                      addTab === 'bulk'
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    Bulk Add
+                  </button>
+                </div>
+              )}
+              {(!editing && addTab === 'bulk') ? bulkRoomForm : roomForm}
             </DialogContent>
           </Dialog>
         </div>

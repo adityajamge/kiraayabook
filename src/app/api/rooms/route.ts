@@ -45,11 +45,30 @@ export async function POST(request: Request) {
   const property_id = getPropertyId(request)
   const body = await request.json()
 
-  const { room_number, capacity, floor, type } = body
-
   if (!property_id) {
     return Response.json({ error: 'property_id is required' }, { status: 400 })
   }
+
+  // Bulk insert: body.rooms is an array
+  if (Array.isArray(body.rooms)) {
+    if (body.rooms.length === 0 || body.rooms.length > 200) {
+      return Response.json({ error: 'rooms array must have 1–200 entries' }, { status: 400 })
+    }
+    const values = body.rooms.map(
+      (r: { room_number: string; capacity: number; floor?: string | null; type?: string | null }) => ({
+        org_id,
+        property_id,
+        room_number: r.room_number,
+        capacity: r.capacity,
+        floor: r.floor ?? null,
+        type: r.type ?? null,
+      })
+    )
+    await db.insert(rooms).values(values)
+    return Response.json({ count: values.length }, { status: 201 })
+  }
+
+  const { room_number, capacity, floor, type } = body
 
   if (!room_number || !capacity) {
     return Response.json({ error: 'room_number and capacity are required' }, { status: 400 })

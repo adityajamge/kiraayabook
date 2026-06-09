@@ -65,8 +65,8 @@ export function BottomNav({
   return (
     <>
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex z-50"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="lg:hidden fixed inset-x-4 bg-white dark:bg-gray-900 rounded-2xl shadow-[0_4px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-gray-800/60 flex z-50"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
         {navItems.map(({ href, icon: Icon, key }) => {
           const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
@@ -74,25 +74,45 @@ export function BottomNav({
             <Link
               key={href}
               href={href}
-              className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[11px] font-medium transition-colors',
-                active ? 'text-black dark:text-white' : 'text-gray-400 dark:text-gray-500'
-              )}
+              className="flex-1 flex flex-col items-center justify-center gap-1 py-3"
             >
-              <Icon className={cn('w-5 h-5', active ? 'stroke-[2.5]' : 'stroke-2')} />
-              {t(key)}
+              <div className={cn(
+                'flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200',
+                active ? 'bg-gray-900 dark:bg-white' : ''
+              )}>
+                <Icon className={cn(
+                  'w-5 h-5 transition-all',
+                  active ? 'text-white dark:text-gray-900 stroke-[2.5]' : 'text-gray-400 dark:text-gray-500 stroke-2'
+                )} />
+              </div>
+              <span className={cn(
+                'text-[10px] font-medium transition-colors',
+                active ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+              )}>
+                {t(key)}
+              </span>
             </Link>
           )
         })}
         <button
           onClick={() => setOpen(true)}
-          className={cn(
-            'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[11px] font-medium transition-colors',
-            moreActive ? 'text-black dark:text-white' : 'text-gray-400 dark:text-gray-500'
-          )}
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-3"
         >
-          <MoreHorizontal className={cn('w-5 h-5', moreActive ? 'stroke-[2.5]' : 'stroke-2')} />
-          {t('nav.more')}
+          <div className={cn(
+            'flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200',
+            moreActive ? 'bg-gray-900 dark:bg-white' : ''
+          )}>
+            <MoreHorizontal className={cn(
+              'w-5 h-5 transition-all',
+              moreActive ? 'text-white dark:text-gray-900 stroke-[2.5]' : 'text-gray-400 dark:text-gray-500 stroke-2'
+            )} />
+          </div>
+          <span className={cn(
+            'text-[10px] font-medium transition-colors',
+            moreActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+          )}>
+            {t('nav.more')}
+          </span>
         </button>
       </nav>
 

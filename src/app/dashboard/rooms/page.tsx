@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Plus, Pencil, DoorOpen, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -107,16 +107,22 @@ export default function RoomsPage() {
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
-  const filtered = rooms.filter((r) => {
-    const matchFilter = filter === 'all' || (filter === 'vacant' ? r.vacant > 0 : r.vacant === 0)
-    const matchSearch = !search || r.room_number.toLowerCase().includes(search.toLowerCase())
-    return matchFilter && matchSearch
-  })
+  const filtered = useMemo(
+    () => rooms.filter((r) => {
+      const matchFilter = filter === 'all' || (filter === 'vacant' ? r.vacant > 0 : r.vacant === 0)
+      const matchSearch = !search || r.room_number.toLowerCase().includes(search.toLowerCase())
+      return matchFilter && matchSearch
+    }),
+    [rooms, filter, search]
+  )
 
-  const totalBeds = rooms.reduce((s, r) => s + r.capacity, 0)
-  const occupiedBeds = rooms.reduce((s, r) => s + r.occupied, 0)
-  const vacantBeds = rooms.reduce((s, r) => s + r.vacant, 0)
-  const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0
+  const { totalBeds, occupiedBeds, vacantBeds, occupancyPct } = useMemo(() => {
+    const totalBeds    = rooms.reduce((s, r) => s + r.capacity, 0)
+    const occupiedBeds = rooms.reduce((s, r) => s + r.occupied, 0)
+    const vacantBeds   = rooms.reduce((s, r) => s + r.vacant, 0)
+    const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0
+    return { totalBeds, occupiedBeds, vacantBeds, occupancyPct }
+  }, [rooms])
 
   const roomForm = (
     <div className="space-y-4 mt-2">
@@ -190,11 +196,16 @@ export default function RoomsPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-[28px] font-bold leading-tight dark:text-white">{t('rooms.title')}</h1>
-          {!loading && rooms.length > 0 && (
-            <p className="text-sm text-gray-500 mt-0.5">
-              {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} · {vacantBeds} {vacantBeds === 1 ? 'bed' : 'beds'} free
-            </p>
-          )}
+          {/* Fixed height prevents heading from shifting when subtitle loads */}
+          <div className="h-5 mt-0.5">
+            {loading ? (
+              <div className="h-3.5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            ) : rooms.length > 0 ? (
+              <p className="text-sm text-gray-500">
+                {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} · {vacantBeds} {vacantBeds === 1 ? 'bed' : 'beds'} free
+              </p>
+            ) : null}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -226,32 +237,43 @@ export default function RoomsPage() {
         </div>
       </div>
 
-      {/* Occupancy summary card */}
-      {!loading && rooms.length > 0 && (
-        <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="text-center">
-              <p className="text-xl font-bold text-white">{rooms.length}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">Rooms</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-white">{occupiedBeds}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">Occupied</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-green-400">{vacantBeds}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">Free</p>
-            </div>
+      {/* Occupancy summary card — always rendered to prevent layout shift */}
+      <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
+        {loading ? (
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="text-center space-y-1.5">
+                <div className="h-7 w-10 mx-auto bg-gray-700 rounded animate-pulse" />
+                <div className="h-2.5 w-12 mx-auto bg-gray-700 rounded animate-pulse" />
+              </div>
+            ))}
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-1.5">
-            <div
-              className="bg-green-400 rounded-full h-1.5 transition-all duration-300"
-              style={{ width: `${occupancyPct}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-gray-500 mt-1.5 text-center">{occupancyPct}% occupancy rate</p>
-        </div>
-      )}
+        ) : rooms.length > 0 ? (
+          <>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="text-center">
+                <p className="text-xl font-bold text-white">{rooms.length}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Rooms</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-white">{occupiedBeds}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Occupied</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-green-400">{vacantBeds}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Free</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-1.5">
+              <div
+                className="bg-green-400 rounded-full h-1.5 transition-all duration-300"
+                style={{ width: `${occupancyPct}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1.5 text-center">{occupancyPct}% occupancy rate</p>
+          </>
+        ) : null}
+      </div>
 
       {/* Search input */}
       {searchOpen && (

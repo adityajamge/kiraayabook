@@ -181,9 +181,11 @@ export default function PropertiesPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-[28px] font-bold leading-tight dark:text-white">{t('properties.title')}</h1>
-          {!loading && properties.length > 0 && (
-            <p className="text-sm text-gray-500 mt-0.5">{properties.length} {properties.length === 1 ? 'property' : 'properties'}</p>
-          )}
+          <div className="h-5 mt-0.5">
+            {!loading && properties.length > 0 && (
+              <p className="text-sm text-gray-500">{properties.length} {properties.length === 1 ? 'property' : 'properties'}</p>
+            )}
+          </div>
         </div>
         <button
           onClick={openAdd}

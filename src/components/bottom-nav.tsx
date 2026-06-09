@@ -52,12 +52,14 @@ export function BottomNav({
   }
 
   const selectProperty = async (property_id: string | null) => {
+    setCurrentPropertyId(property_id)
+    setOpen(false)
     await fetch('/api/auth/select-property', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ property_id }),
     })
-    window.location.reload()
+    router.refresh()
   }
 
   return (
@@ -94,16 +96,22 @@ export function BottomNav({
         </button>
       </nav>
 
-      {open && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 bg-black/40 z-60"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="lg:hidden fixed bottom-0 inset-x-0 z-70 bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4"
-            style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
-          >
+      {/* Backdrop — always mounted, fades in/out */}
+      <div
+        className={cn(
+          'lg:hidden fixed inset-0 bg-black/40 z-60 transition-opacity duration-300',
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+        onClick={() => setOpen(false)}
+      />
+      {/* Sheet — always mounted, slides up/down */}
+      <div
+        className={cn(
+          'lg:hidden fixed bottom-0 inset-x-0 z-70 bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 transition-transform duration-300 ease-out will-change-transform',
+          open ? 'translate-y-0' : 'translate-y-full'
+        )}
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+      >
             <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-5" />
             <Link
               href="/dashboard/expenses"
@@ -212,9 +220,7 @@ export function BottomNav({
                 ))}
               </div>
             </div>
-          </div>
-        </>
-      )}
+      </div>
     </>
   )
 }

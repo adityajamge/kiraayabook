@@ -215,8 +215,10 @@ export function BillPreview({ data, onClose }: { data: BillData; onClose: () => 
       setScale(Math.min(1, available / 880))
     }
     update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
+    let tid: ReturnType<typeof setTimeout>
+    const debounced = () => { clearTimeout(tid); tid = setTimeout(update, 100) }
+    window.addEventListener('resize', debounced)
+    return () => { window.removeEventListener('resize', debounced); clearTimeout(tid) }
   }, [])
 
   const captureJpeg = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {

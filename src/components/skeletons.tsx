@@ -4,50 +4,76 @@ function Sk({ className = '' }: { className?: string }) {
 
 export function DashboardSkeleton() {
   return (
-    <div>
-      <div className="mb-6">
-        <Sk className="h-7 w-36 mb-2" />
-        <Sk className="h-4 w-72" />
+    <div className="space-y-4 max-w-2xl lg:max-w-none">
+      {/* PG identity bar */}
+      <div className="flex items-center justify-between">
+        <div>
+          <Sk className="h-5 w-32" />
+          <Sk className="h-3.5 w-48 mt-1" />
+        </div>
+        <Sk className="w-10 h-10 rounded-full shrink-0" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <Sk className="h-4 w-24" />
-              <Sk className="w-8 h-8 rounded-lg" />
-            </div>
-            <Sk className="h-9 w-20 mb-1.5" />
-            <Sk className="h-3 w-16" />
+      {/* Greeting banner */}
+      <Sk className="h-20 w-full rounded-2xl" />
+
+      {/* 3-col occupancy chips */}
+      <div className="grid grid-cols-3 gap-2">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center">
+            <Sk className="h-7 w-10 mx-auto mb-1" />
+            <Sk className="h-3 w-14 mx-auto" />
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Rent overview card */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <Sk className="h-4 w-28 mb-1" />
+            <Sk className="h-3 w-20" />
+          </div>
+          <Sk className="h-6 w-20 rounded-full" />
+        </div>
+        <div className="flex justify-between mb-3">
+          <Sk className="h-8 w-24" />
+          <Sk className="h-8 w-24" />
+        </div>
+        <Sk className="h-2 w-full rounded-full" />
+      </div>
+
+      {/* Expenses + Net Income */}
+      <div className="grid grid-cols-2 gap-3">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <Sk className="h-5 w-28 mb-1.5" />
-                <Sk className="h-3.5 w-44" />
-              </div>
-              <Sk className="h-6 w-20 rounded-full" />
-            </div>
-            <div className="space-y-2">
-              {[...Array(4)].map((_, j) => (
-                <div key={j} className="flex items-center gap-3 p-2.5">
-                  <Sk className="w-9 h-9 rounded-full shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <Sk className="h-4 w-32" />
-                    <Sk className="h-3 w-20" />
-                  </div>
-                  <Sk className="h-4 w-14 shrink-0" />
-                  <Sk className="w-8 h-8 rounded-full shrink-0" />
-                </div>
-              ))}
-            </div>
+          <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+            <Sk className="w-8 h-8 rounded-full mb-2" />
+            <Sk className="h-3 w-16 mb-1" />
+            <Sk className="h-7 w-24 mb-1" />
+            <Sk className="h-3 w-20" />
           </div>
         ))}
+      </div>
+
+      {/* Pending rent list */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <Sk className="h-4 w-32" />
+          <Sk className="h-6 w-8 rounded-full" />
+        </div>
+        <div className="space-y-1">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-2.5">
+              <Sk className="w-9 h-9 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Sk className="h-4 w-28" />
+                <Sk className="h-3 w-16" />
+              </div>
+              <Sk className="h-4 w-12 shrink-0" />
+              <Sk className="w-8 h-8 rounded-full shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

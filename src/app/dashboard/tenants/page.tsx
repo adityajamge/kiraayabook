@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Search, CheckCircle, MessageCircle, RefreshCw, Building2, Calendar, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -77,6 +77,7 @@ export default function TenantsPage() {
     const settings = await sr.json()
     if (settings?.name) setOrgName(settings.name)
     setLoading(false)
+    loadCollect()
   }
 
   const loadCollect = async () => {
@@ -86,20 +87,27 @@ export default function TenantsPage() {
     setCollectLoading(false)
   }
 
-  useEffect(() => { if (tab === 'collect') loadCollect() }, [tab])
+  const roomMap = useMemo(
+    () => Object.fromEntries(rooms.map((r) => [r.id, r.room_number])),
+    [rooms]
+  )
 
-  const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_number]))
+  const filtered = useMemo(
+    () => tenants.filter((tenant) => {
+      const q = search.toLowerCase()
+      const matchSearch = !q || tenant.name.toLowerCase().includes(q) || tenant.phone.includes(q)
+      const matchStatus = statusFilter === 'all' || tenant.status === statusFilter
+      return matchSearch && matchStatus
+    }),
+    [tenants, search, statusFilter]
+  )
 
-  const filtered = tenants.filter((tenant) => {
-    const q = search.toLowerCase()
-    const matchSearch = !q || tenant.name.toLowerCase().includes(q) || tenant.phone.includes(q)
-    const matchStatus = statusFilter === 'all' || tenant.status === statusFilter
-    return matchSearch && matchStatus
-  })
-
-  const visibleCollect = collectFilter === 'pending'
-    ? collectRecords.filter((r) => r.status === 'pending')
-    : collectRecords
+  const visibleCollect = useMemo(
+    () => collectFilter === 'pending'
+      ? collectRecords.filter((r) => r.status === 'pending')
+      : collectRecords,
+    [collectRecords, collectFilter]
+  )
 
   const handleSave = async () => {
     const trimmedName = form.name.trim()
@@ -157,10 +165,14 @@ export default function TenantsPage() {
   }
 
   const setField = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
-  const pendingCount = collectRecords.filter((r) => r.status === 'pending').length
-  const pendingTotal = collectRecords.filter((r) => r.status === 'pending').reduce((s, r) => s + r.amount, 0)
-  const activeCount = tenants.filter((t) => t.status === 'active').length
-  const vacatedCount = tenants.filter((t) => t.status === 'vacated').length
+  const { pendingCount, pendingTotal } = useMemo(() => {
+    const pending = collectRecords.filter((r) => r.status === 'pending')
+    return { pendingCount: pending.length, pendingTotal: pending.reduce((s, r) => s + r.amount, 0) }
+  }, [collectRecords])
+  const { activeCount, vacatedCount } = useMemo(() => ({
+    activeCount:  tenants.filter((t) => t.status === 'active').length,
+    vacatedCount: tenants.filter((t) => t.status === 'vacated').length,
+  }), [tenants])
 
   const addTenantForm = (
     <div className="space-y-3 mt-2">
@@ -266,23 +278,32 @@ export default function TenantsPage() {
       {/* ── All Tenants tab ── */}
       {tab === 'tenants' && (
         <>
-          {/* Stats row */}
-          {!loading && tenants.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
-                <p className="text-xl font-bold dark:text-white">{tenants.length}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">Total</p>
-              </div>
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
-                <p className="text-xl font-bold text-green-600">{activeCount}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">{t('tenants.filterActive')}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
-                <p className="text-xl font-bold text-gray-400">{vacatedCount}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">{t('tenants.filterExited')}</p>
-              </div>
-            </div>
-          )}
+          {/* Stats row — always rendered to prevent layout shift */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {loading ? (
+              [0, 1, 2].map(i => (
+                <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
+                  <div className="h-7 w-8 mx-auto bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+                  <div className="h-2.5 w-10 mx-auto bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                </div>
+              ))
+            ) : tenants.length > 0 ? (
+              <>
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
+                  <p className="text-xl font-bold dark:text-white">{tenants.length}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Total</p>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
+                  <p className="text-xl font-bold text-green-600">{activeCount}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{t('tenants.filterActive')}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center shadow-sm">
+                  <p className="text-xl font-bold text-gray-400">{vacatedCount}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{t('tenants.filterExited')}</p>
+                </div>
+              </>
+            ) : null}
+          </div>
 
           {/* Search */}
           <div className="relative mb-3">

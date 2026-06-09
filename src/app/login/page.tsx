@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Home, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -46,15 +47,19 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-8">
           <div className={`w-20 h-20 rounded-[22px] flex items-center justify-center overflow-hidden mb-4 shadow-lg ${logoUrl ? '' : 'bg-black'}`}>
             {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="logo" className="w-full h-full object-contain" />
+              <Image src={logoUrl} alt="logo" width={80} height={80} className="w-full h-full object-contain" />
             ) : (
               <Home className="w-9 h-9 text-white" />
             )}
           </div>
-          {orgName && (
-            <p className="text-lg font-bold text-gray-900">{orgName}</p>
-          )}
+          {/* Fixed height so the heading never shifts when org name loads */}
+          <div className="h-7 flex items-center justify-center">
+            {orgName !== null ? (
+              <p className="text-lg font-bold text-gray-900">{orgName}</p>
+            ) : (
+              <div className="h-5 w-32 bg-gray-100 rounded animate-pulse" />
+            )}
+          </div>
         </div>
 
         {/* Heading */}

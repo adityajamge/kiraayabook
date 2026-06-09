@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, CheckCircle, MessageCircle, FileText, AlertTriangle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { BillPreview, type BillData } from '@/components/bill-preview'
@@ -128,14 +128,23 @@ export default function RentPage() {
     }
   }
 
-  const tenantMap = Object.fromEntries(tenants.map((tn) => [tn.id, tn]))
-  const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_number]))
+  const tenantMap = useMemo(
+    () => Object.fromEntries(tenants.map((tn) => [tn.id, tn])),
+    [tenants]
+  )
+  const roomMap = useMemo(
+    () => Object.fromEntries(rooms.map((r) => [r.id, r.room_number])),
+    [rooms]
+  )
 
-  const paid = records.filter((r) => r.status === 'paid').reduce((s, r) => s + r.amount, 0)
-  const pending = records.filter((r) => r.status === 'pending').reduce((s, r) => s + r.amount, 0)
-  const overdueCount = records.filter(isOverdue).length
-  const total = paid + pending
-  const pct = total > 0 ? Math.round((paid / total) * 100) : 0
+  const { paid, pending, overdueCount, total, pct } = useMemo(() => {
+    const paid         = records.filter((r) => r.status === 'paid').reduce((s, r) => s + r.amount, 0)
+    const pending      = records.filter((r) => r.status === 'pending').reduce((s, r) => s + r.amount, 0)
+    const overdueCount = records.filter(isOverdue).length
+    const total        = paid + pending
+    const pct          = total > 0 ? Math.round((paid / total) * 100) : 0
+    return { paid, pending, overdueCount, total, pct }
+  }, [records])
 
   const activeBillData = billRecord ? buildBillData(billRecord) : null
 
@@ -167,33 +176,44 @@ export default function RentPage() {
         </button>
       </div>
 
-      {/* Summary card */}
-      {!loading && records.length > 0 && (
-        <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="text-center">
-              <p className="text-lg font-bold text-green-400">{fmt(paid)}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.collected')}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-red-400">{fmt(pending)}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.pending')}</p>
-            </div>
-            <div className="text-center">
-              <p className={`text-lg font-bold ${overdueCount > 0 ? 'text-orange-400' : 'text-gray-400'}`}>{overdueCount}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.overdue')}</p>
-            </div>
-          </div>
-          {total > 0 && (
-            <>
-              <div className="w-full bg-gray-700 rounded-full h-1.5">
-                <div className="bg-green-400 rounded-full h-1.5 transition-all duration-300" style={{ width: `${pct}%` }} />
+      {/* Summary card — always rendered to prevent layout shift on month change */}
+      <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
+        {loading ? (
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="text-center space-y-1.5">
+                <div className="h-6 w-16 mx-auto bg-gray-700 rounded animate-pulse" />
+                <div className="h-2.5 w-12 mx-auto bg-gray-700 rounded animate-pulse" />
               </div>
-              <p className="text-[11px] text-gray-500 mt-1.5 text-center">{pct}% collection rate</p>
-            </>
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : records.length > 0 ? (
+          <>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="text-center">
+                <p className="text-lg font-bold text-green-400">{fmt(paid)}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.collected')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-red-400">{fmt(pending)}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.pending')}</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-lg font-bold ${overdueCount > 0 ? 'text-orange-400' : 'text-gray-400'}`}>{overdueCount}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t('rent.overdue')}</p>
+              </div>
+            </div>
+            {total > 0 && (
+              <>
+                <div className="w-full bg-gray-700 rounded-full h-1.5">
+                  <div className="bg-green-400 rounded-full h-1.5 transition-all duration-300" style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-[11px] text-gray-500 mt-1.5 text-center">{pct}% collection rate</p>
+              </>
+            )}
+          </>
+        ) : null}
+      </div>
 
       {/* Record list */}
       {loading ? (

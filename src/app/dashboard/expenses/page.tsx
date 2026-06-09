@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Plus, Trash2, ChevronLeft, ChevronRight, Receipt, TrendingDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
@@ -49,9 +49,8 @@ export default function ExpensesPage() {
 
   const load = async () => {
     setLoading(true)
-    const res = await fetch('/api/expenses?limit=500')
-    const all: Expense[] = (await res.json()).data ?? []
-    setExpenses(all.filter((e) => e.date.slice(0, 7) === month))
+    const res = await fetch(`/api/expenses?month=${month}&limit=200`)
+    setExpenses((await res.json()).data ?? [])
     setLoading(false)
   }
 
@@ -92,15 +91,16 @@ export default function ExpensesPage() {
     load()
   }
 
-  const total = expenses.reduce((s, e) => s + e.amount, 0)
-
-  // Group expenses by date for visual separation
-  const grouped: Record<string, Expense[]> = {}
-  expenses.forEach((e) => {
-    if (!grouped[e.date]) grouped[e.date] = []
-    grouped[e.date].push(e)
-  })
-  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+  const { total, grouped, sortedDates } = useMemo(() => {
+    const total = expenses.reduce((s, e) => s + e.amount, 0)
+    const grouped: Record<string, Expense[]> = {}
+    for (const e of expenses) {
+      if (!grouped[e.date]) grouped[e.date] = []
+      grouped[e.date].push(e)
+    }
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+    return { total, grouped, sortedDates }
+  }, [expenses])
 
   return (
     <>
@@ -132,9 +132,18 @@ export default function ExpensesPage() {
         </button>
       </div>
 
-      {/* Summary card */}
-      {!loading && expenses.length > 0 && (
-        <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
+      {/* Summary card — always rendered to prevent layout shift on month change */}
+      <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
+        {loading ? (
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-2.5 w-20 bg-gray-700 rounded animate-pulse" />
+              <div className="h-8 w-28 bg-gray-700 rounded animate-pulse" />
+              <div className="h-2.5 w-14 bg-gray-700 rounded animate-pulse" />
+            </div>
+            <div className="w-12 h-12 bg-gray-700 rounded-2xl animate-pulse" />
+          </div>
+        ) : expenses.length > 0 ? (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] text-gray-400 mb-1">{t('expenses.totalSpent')}</p>
@@ -145,8 +154,8 @@ export default function ExpensesPage() {
               <TrendingDown className="w-6 h-6 text-red-400" />
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
+      </div>
 
       {/* Content */}
       {loading ? (

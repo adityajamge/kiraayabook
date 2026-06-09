@@ -1,10 +1,10 @@
-'use client'
-
-import { useEffect } from 'react'
-
 export function DarkModeInit({ dark }: { dark: boolean }) {
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-  }, [dark])
-  return null
+  return (
+    <script
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{
+        __html: `if(${dark})document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark')`,
+      }}
+    />
+  )
 }

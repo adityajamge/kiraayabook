@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/sidebar'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { BottomNav } from '@/components/bottom-nav'
 import { DarkModeInit } from '@/components/dark-mode-init'
+import { PageTransition } from '@/components/page-transition'
 import { Toaster } from '@/components/ui/sonner'
 import { verifyJwt } from '@/lib/auth'
 import { LanguageProvider } from '@/lib/i18n'
@@ -112,7 +113,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             cookieSet={cookieSet}
           />
           <main className="flex-1 overflow-auto bg-white dark:bg-gray-950 lg:bg-gray-50 p-4 lg:p-6 pb-24 lg:pb-6">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </main>
         </div>
         <BottomNav language={language} properties={propertyList} activePropertyId={activePropertyId} />

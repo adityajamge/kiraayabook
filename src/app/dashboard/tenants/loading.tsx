@@ -5,10 +5,19 @@ function Sk({ className = '' }: { className?: string }) {
 export default function Loading() {
   return (
     <div className="space-y-4 max-w-2xl lg:max-w-none">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <Sk className="h-7 w-28" />
         <Sk className="h-9 w-32 rounded-xl" />
       </div>
+
+      {/* Tab selector */}
+      <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        <Sk className="flex-1 h-8 rounded-lg" />
+        <Sk className="flex-1 h-8 rounded-lg" />
+      </div>
+
+      {/* Stats row */}
       <div className="grid grid-cols-3 gap-2">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 text-center">
@@ -17,6 +26,8 @@ export default function Loading() {
           </div>
         ))}
       </div>
+
+      {/* Tenant list */}
       <div className="space-y-2">
         {[...Array(6)].map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Plus, Pencil, DoorOpen, Search, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, Pencil, DoorOpen, Search, Trash2, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useT } from '@/lib/i18n'
@@ -31,6 +32,7 @@ type AddTab = 'single' | 'bulk'
 
 export default function RoomsPage() {
   const t = useT()
+  const router = useRouter()
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
@@ -566,15 +568,20 @@ export default function RoomsPage() {
             ) : (
               <div className="space-y-2">
                 {roomTenants.map((tenant) => (
-                  <div key={tenant.id} className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <button
+                    key={tenant.id}
+                    onClick={() => router.push(`/dashboard/tenants/${tenant.id}`)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl text-left active:scale-[0.98] transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
                     <div className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white rounded-xl flex items-center justify-center text-xs font-bold shrink-0">
                       {tenant.cot_number ?? '—'}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold dark:text-white truncate">{tenant.name}</p>
                       <p className="text-xs text-gray-400">{tenant.phone}</p>
                     </div>
-                  </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                  </button>
                 ))}
               </div>
             )}

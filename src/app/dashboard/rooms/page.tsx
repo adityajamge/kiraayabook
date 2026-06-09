@@ -514,7 +514,7 @@ export default function RoomsPage() {
 
                 <div className="flex items-center gap-1.5 mt-1 mb-3 min-h-4.5">
                   {room.floor && (
-                    <span className="text-[11px] text-gray-400 truncate">{room.floor}</span>
+                    <span className="text-[11px] text-gray-400 truncate">Floor: {room.floor}</span>
                   )}
                   {room.floor && room.type && <span className="text-gray-300 dark:text-gray-700 text-[11px]">·</span>}
                   {room.type && (
@@ -533,7 +533,7 @@ export default function RoomsPage() {
                   />
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                  {room.occupied}/{room.capacity} beds
+                  Capacity: {room.capacity} beds
                   {room.vacant > 0 && (
                     <span className="text-gray-900 dark:text-gray-200 font-medium"> · {room.vacant} free</span>
                   )}
@@ -552,7 +552,11 @@ export default function RoomsPage() {
           </DialogHeader>
           {viewRoom && (
             <p className="text-xs text-gray-400 -mt-2">
-              {[viewRoom.floor, viewRoom.type, `${viewRoom.capacity} beds total`].filter(Boolean).join(' · ')}
+              {[
+                viewRoom.floor && `Floor: ${viewRoom.floor}`,
+                viewRoom.type,
+                `Capacity: ${viewRoom.capacity}`,
+              ].filter(Boolean).join(' · ')}
             </p>
           )}
           <div className="mt-1">
@@ -573,12 +577,19 @@ export default function RoomsPage() {
                     onClick={() => router.push(`/dashboard/tenants/${tenant.id}`)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl text-left active:scale-[0.98] transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    <div className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white rounded-xl flex items-center justify-center text-xs font-bold shrink-0">
-                      {tenant.cot_number ?? '—'}
+                    <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 text-gray-700 dark:text-gray-300">
+                      {tenant.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold dark:text-white truncate">{tenant.name}</p>
-                      <p className="text-xs text-gray-400">{tenant.phone}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {tenant.cot_number && (
+                          <span className="text-[11px] font-medium px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full shrink-0">
+                            Cot {tenant.cot_number}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 truncate">{tenant.phone}</span>
+                      </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
                   </button>

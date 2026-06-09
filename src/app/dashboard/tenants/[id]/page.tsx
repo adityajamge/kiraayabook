@@ -228,7 +228,7 @@ export default function TenantDetailPage() {
               <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                 <Building2 className="w-3.5 h-3.5" />
                 {t('common.room')} {roomMap[tenant.room_id] ?? '—'}
-                {tenant.cot_number && ` · ${tenant.cot_number}`}
+                {tenant.cot_number && ` · Cot ${tenant.cot_number}`}
               </span>
               {tenant.rent_amount != null && (
                 <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">

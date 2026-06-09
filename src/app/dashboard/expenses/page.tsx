@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, ChevronLeft, ChevronRight, Receipt } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, Receipt, TrendingDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { useT } from '@/lib/i18n'
@@ -94,138 +94,113 @@ export default function ExpensesPage() {
 
   const total = expenses.reduce((s, e) => s + e.amount, 0)
 
+  // Group expenses by date for visual separation
+  const grouped: Record<string, Expense[]> = {}
+  expenses.forEach((e) => {
+    if (!grouped[e.date]) grouped[e.date] = []
+    grouped[e.date].push(e)
+  })
+  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+
   return (
     <>
-      {/* ── Mobile layout ── */}
-      <div className="lg:hidden">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold dark:text-white">{t('expenses.title')}</h1>
-          <button onClick={openAdd}
-            className="w-9 h-9 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-sm">
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Month navigator */}
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <button onClick={() => setMonth(addMonths(month, -1))}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="font-bold text-base dark:text-white min-w-32 text-center">{formatMonthLabel(month)}</span>
-          <button onClick={() => setMonth(addMonths(month, 1))}
-            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Total card */}
-        {!loading && expenses.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t('expenses.totalSpent')}</p>
-              <p className="text-2xl font-bold text-red-500">{fmt(total)}</p>
-            </div>
-            <Receipt className="w-8 h-8 text-gray-200 dark:text-gray-700" />
-          </div>
-        )}
-
-        {/* Expense list */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
-          </div>
-        ) : expenses.length === 0 ? (
-          <p className="text-center py-16 text-gray-400 text-sm">{t('expenses.noExpenses')}</p>
-        ) : (
-          <div className="space-y-2.5">
-            {expenses.map((e) => (
-              <div key={e.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm dark:text-white truncate">{e.description}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{fmtDay(e.date)}</p>
-                </div>
-                <p className="text-base font-bold text-red-500 shrink-0">{fmt(e.amount)}</p>
-                <button onClick={() => handleDelete(e.id)} disabled={deleting === e.id}
-                  className="w-8 h-8 flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0 disabled:opacity-40">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-[28px] font-bold leading-tight dark:text-white">{t('expenses.title')}</h1>
+        <button
+          onClick={openAdd}
+          className="w-9 h-9 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl flex items-center justify-center hover:bg-gray-700 dark:hover:bg-gray-100 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* ── Desktop layout ── */}
-      <div className="hidden lg:block">
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold dark:text-white">{t('expenses.title')}</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('expenses.subtitle')}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
-              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white" />
-            <button onClick={openAdd}
-              className="flex items-center gap-1.5 bg-black dark:bg-white text-white dark:text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
-              <Plus className="w-4 h-4" />{t('expenses.addExpense')}
-            </button>
+      {/* Month navigator */}
+      <div className="flex items-center justify-center gap-4 mb-5">
+        <button
+          onClick={() => setMonth(addMonths(month, -1))}
+          className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="font-bold text-base dark:text-white min-w-36 text-center">{formatMonthLabel(month)}</span>
+        <button
+          onClick={() => setMonth(addMonths(month, 1))}
+          className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Summary card */}
+      {!loading && expenses.length > 0 && (
+        <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] text-gray-400 mb-1">{t('expenses.totalSpent')}</p>
+              <p className="text-2xl font-bold text-red-400">{fmt(total)}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-900/30 rounded-2xl flex items-center justify-center">
+              <TrendingDown className="w-6 h-6 text-red-400" />
+            </div>
           </div>
         </div>
+      )}
 
-        {!loading && expenses.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-5 py-4 mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t('expenses.totalSpentThisMonth')}</p>
-              <p className="text-2xl font-bold text-red-500">{fmt(total)}</p>
-            </div>
-            <Receipt className="w-8 h-8 text-gray-200 dark:text-gray-700" />
+      {/* Content */}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
+        </div>
+      ) : expenses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+            <Receipt className="w-8 h-8 text-gray-400" />
           </div>
-        )}
-
-        {loading ? (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-800">
-                <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                <div className="w-20 h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-        ) : expenses.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">{t('expenses.noExpenses')}</div>
-        ) : (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
-                  {[t('expenses.dateHeader'), t('expenses.descriptionHeader'), t('expenses.amountHeader'), ''].map((h, i) => (
-                    <th key={i} className="text-left text-xs font-medium text-gray-400 dark:text-gray-500 px-5 py-3.5 tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((e) => (
-                  <tr key={e.id} className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <td className="px-5 py-4 text-gray-500 whitespace-nowrap">{fmtDay(e.date)}</td>
-                    <td className="px-5 py-4 font-medium dark:text-white">{e.description}</td>
-                    <td className="px-5 py-4 font-bold text-red-500">{fmt(e.amount)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button onClick={() => handleDelete(e.id)} disabled={deleting === e.id}
-                        className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-40">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
+          <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{t('expenses.noExpenses')}</p>
+          <p className="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed">
+            Track your PG expenses to understand your net income each month.
+          </p>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 bg-gray-900 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-gray-700"
+          >
+            <Plus className="w-4 h-4" /> Add Expense
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sortedDates.map((d) => (
+            <div key={d}>
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">{fmtDay(d)}</p>
+              <div className="space-y-2">
+                {grouped[d].map((e) => (
+                  <div
+                    key={e.id}
+                    className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3"
+                  >
+                    <div className="w-9 h-9 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-center justify-center shrink-0">
+                      <Receipt className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm dark:text-white truncate">{e.description}</p>
+                    </div>
+                    <p className="text-base font-bold text-red-500 shrink-0">{fmt(e.amount)}</p>
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      disabled={deleting === e.id}
+                      className="w-8 h-8 flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0 disabled:opacity-40"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
-              {expenses.length === 1 ? t('expenses.expenseCount', { count: String(expenses.length) }) : t('expenses.expenseCountPlural', { count: String(expenses.length) })} · {t('expenses.total', { amount: fmt(total) })}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add Expense dialog */}
       <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false) }}>
@@ -240,37 +215,38 @@ export default function ExpensesPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('expenses.descriptionPlaceholder')}
                 autoFocus
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t('expenses.amount')}</label>
               <input
-                type="number"
-                min="1"
-                max="999999"
-                inputMode="numeric"
+                type="number" min="1" max="999999" inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={t('expenses.amountPlaceholder')}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t('expenses.date')}</label>
               <input
-                type="date"
-                max={today}
+                type="date" max={today}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 dark:bg-gray-800 dark:text-white"
               />
             </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setOpen(false)}
-                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('common.cancel')}</button>
-              <button onClick={handleSave} disabled={saving}
-                className="flex-1 bg-black text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-50">
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setOpen(false)}
+                className="flex-1 border border-gray-200 dark:border-gray-600 dark:text-gray-300 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700"
+              >{t('common.cancel')}</button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 bg-gray-900 text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-700 disabled:opacity-50"
+              >
                 {saving ? t('expenses.saving') : t('expenses.save')}
               </button>
             </div>

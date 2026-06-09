@@ -267,7 +267,7 @@ export default function StaffPage() {
       {/* Mobile FAB */}
       <button
         onClick={openAdd}
-        className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed bottom-24 right-4 z-40 sm:hidden"
+        className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors fixed right-4 z-40 sm:hidden bottom-[calc(100px+env(safe-area-inset-bottom))]"
       >
         <Plus className="w-6 h-6" />
       </button>

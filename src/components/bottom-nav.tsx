@@ -65,7 +65,7 @@ export function BottomNav({
   return (
     <>
       <nav
-        className="lg:hidden fixed inset-x-4 bg-white dark:bg-gray-900 rounded-2xl shadow-[0_4px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-gray-800/60 flex z-50"
+        className="lg:hidden fixed inset-x-4 bg-white dark:bg-gray-900 rounded-full shadow-[0_4px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-gray-800/60 flex z-50"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
         {navItems.map(({ href, icon: Icon, key }) => {

@@ -112,7 +112,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             activePropertyId={activePropertyId}
             cookieSet={cookieSet}
           />
-          <main className="flex-1 overflow-auto bg-white dark:bg-gray-950 lg:bg-gray-50 p-4 lg:p-6 pb-[calc(88px+env(safe-area-inset-bottom))] lg:pb-6">
+          <main className="flex-1 overflow-auto bg-white dark:bg-gray-950 lg:bg-gray-50 p-4 lg:p-6 pb-[calc(100px+env(safe-area-inset-bottom))] lg:pb-6">
             <PageTransition>{children}</PageTransition>
           </main>
         </div>

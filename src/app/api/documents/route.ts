@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { documents, organisations, tenants } from '@/lib/db/schema'
-import { getOrgId, withAuth} from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
 async function refreshAccessToken(orgId: string, refreshToken: string, clientId: string, clientSecret: string): Promise<string> {
@@ -63,15 +63,16 @@ async function uploadToDrive(accessToken: string, folderId: string, file: File):
 }
 
 export const GET = withAuth(async (request: Request) => {
-  const org_id = await getOrgId(request)
+  const org_id      = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
   const tenant_id = searchParams.get('tenant_id')
 
-  const condition = tenant_id
-    ? and(eq(documents.org_id, org_id), eq(documents.tenant_id, tenant_id))
-    : eq(documents.org_id, org_id)
+  const conditions = [eq(documents.org_id, org_id)]
+  if (property_id) conditions.push(eq(documents.property_id, property_id))
+  if (tenant_id)   conditions.push(eq(documents.tenant_id, tenant_id))
 
-  const rows = await db.select().from(documents).where(condition)
+  const rows = await db.select().from(documents).where(and(...conditions))
   return Response.json(rows)
 })
 
@@ -107,10 +108,29 @@ export const POST = withAuth(async (request: Request) => {
     return Response.json({ error: 'file, tenant_id, and doc_type are required' }, { status: 400 })
   }
 
+  const VALID_DOC_TYPES = ['aadhaar', 'pan', 'passport', 'photo', 'agreement', 'other']
+  if (!VALID_DOC_TYPES.includes(doc_type)) {
+    return Response.json({ error: `doc_type must be one of: ${VALID_DOC_TYPES.join(', ')}` }, { status: 400 })
+  }
+
+  const ALLOWED_DOC_MIME = ['application/pdf', 'image/jpeg', 'image/png']
+  const MAX_DOC_BYTES = 20 * 1024 * 1024
+  if (!ALLOWED_DOC_MIME.includes(file.type)) {
+    return Response.json({ error: 'Document must be PDF, JPEG, or PNG' }, { status: 400 })
+  }
+  if (file.size > MAX_DOC_BYTES) {
+    return Response.json({ error: 'Document must be smaller than 20 MB' }, { status: 400 })
+  }
+
+  const uploadPropertyId = getPropertyId(request)
   const [tenant] = await db
     .select({ property_id: tenants.property_id })
     .from(tenants)
-    .where(and(eq(tenants.id, tenant_id), eq(tenants.org_id, org_id)))
+    .where(and(
+      eq(tenants.id, tenant_id),
+      eq(tenants.org_id, org_id),
+      ...(uploadPropertyId ? [eq(tenants.property_id, uploadPropertyId)] : []),
+    ))
 
   if (!tenant) return Response.json({ error: 'Tenant not found.' }, { status: 404 })
 

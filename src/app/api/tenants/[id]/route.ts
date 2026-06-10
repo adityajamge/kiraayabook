@@ -46,6 +46,18 @@ export const PATCH = withAuth(async (
 
   if (!existing) return Response.json({ error: 'Not found' }, { status: 404 })
 
+  const VALID_STATUSES = ['active', 'inactive']
+  const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+  if (body.status !== undefined && !VALID_STATUSES.includes(body.status)) {
+    return Response.json({ error: 'status must be active or inactive' }, { status: 400 })
+  }
+  if (body.move_in_date !== undefined && !ISO_DATE.test(body.move_in_date)) {
+    return Response.json({ error: 'move_in_date must be YYYY-MM-DD' }, { status: 400 })
+  }
+  if (body.move_out_date !== undefined && body.move_out_date !== null && !ISO_DATE.test(body.move_out_date)) {
+    return Response.json({ error: 'move_out_date must be YYYY-MM-DD' }, { status: 400 })
+  }
+
   const normalized: Partial<typeof tenants.$inferInsert> = {}
   if (body.name          !== undefined) normalized.name          = body.name
   if (body.phone         !== undefined) normalized.phone         = body.phone

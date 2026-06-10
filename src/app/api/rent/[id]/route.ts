@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { payments } from '@/lib/db/schema'
-import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth } from '@/lib/middleware'
 import { eq, and, sql } from 'drizzle-orm'
 import { recomputeStatus } from '@/lib/rent'
 
@@ -37,7 +37,8 @@ export const DELETE = withAuth(async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   // DELETE a payment: body must include payment_id
-  const org_id = await getOrgId(request)
+  const org_id      = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { id: rent_record_id } = await params
   const { payment_id } = await request.json().catch(() => ({}))
 
@@ -51,6 +52,7 @@ export const DELETE = withAuth(async (
       eq(payments.id, payment_id),
       eq(payments.rent_record_id, rent_record_id),
       eq(payments.org_id, org_id),
+      ...(property_id ? [eq(payments.property_id, property_id)] : []),
     ))
     .returning()
 

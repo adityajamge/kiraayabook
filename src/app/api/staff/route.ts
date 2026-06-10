@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { users, properties } from '@/lib/db/schema'
-import { getAuthContext, withAuth} from '@/lib/middleware'
+import { getAuthContext, withAuth } from '@/lib/middleware'
 import { and, eq, ne } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
@@ -44,6 +44,12 @@ export const POST = withAuth(async (request: Request) => {
 
   if (!['manager', 'staff'].includes(staff_role)) {
     return Response.json({ error: 'role must be manager or staff' }, { status: 400 })
+  }
+
+  if (property_id) {
+    const [prop] = await db.select({ id: properties.id }).from(properties)
+      .where(and(eq(properties.id, property_id), eq(properties.org_id, org_id)))
+    if (!prop) return Response.json({ error: 'Property not found' }, { status: 404 })
   }
 
   const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email.trim().toLowerCase()))

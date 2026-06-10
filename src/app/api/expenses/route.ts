@@ -37,6 +37,8 @@ export const POST = withAuth(async (request: Request) => {
   const { description, amount, date } = await request.json()
   if (!description || !amount || !date)
     return Response.json({ error: 'description, amount and date are required' }, { status: 400 })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+    return Response.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
   const [row] = await db
     .insert(expenses)
     .values({ org_id, property_id, description, amount: Number(amount), date })

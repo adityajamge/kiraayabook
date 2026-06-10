@@ -17,6 +17,9 @@ export const POST = withAuth(async (request: Request) => {
   if (typeof amount !== 'number' || amount <= 0) {
     return Response.json({ error: 'amount must be a positive number' }, { status: 400 })
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paid_date)) {
+    return Response.json({ error: 'paid_date must be YYYY-MM-DD' }, { status: 400 })
+  }
   if (payment_mode && !['cash', 'online', 'cheque'].includes(payment_mode)) {
     return Response.json({ error: 'payment_mode must be cash, online, or cheque' }, { status: 400 })
   }
@@ -70,7 +73,8 @@ export const POST = withAuth(async (request: Request) => {
 })
 
 export const GET = withAuth(async (request: Request) => {
-  const org_id = await getOrgId(request)
+  const org_id      = await getOrgId(request)
+  const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
   const rent_record_id = searchParams.get('rent_record_id')
   const tenant_id      = searchParams.get('tenant_id')
@@ -80,6 +84,7 @@ export const GET = withAuth(async (request: Request) => {
   }
 
   const conditions = [eq(payments.org_id, org_id)]
+  if (property_id)    conditions.push(eq(payments.property_id, property_id))
   if (rent_record_id) conditions.push(eq(payments.rent_record_id, rent_record_id))
   if (tenant_id)      conditions.push(eq(payments.tenant_id, tenant_id))
 

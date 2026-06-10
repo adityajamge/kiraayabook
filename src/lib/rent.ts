@@ -59,7 +59,7 @@ export async function ensureRentRecordsUpToDate(
     const latestResult = await db.execute(sql`
       SELECT MAX(cycle_start)::text AS max_cs
       FROM rent_records
-      WHERE tenant_id = ${row.id}
+      WHERE tenant_id = ${row.id} AND org_id = ${org_id}
     `)
     const latestRows = Array.isArray(latestResult) ? latestResult : latestResult?.rows ?? []
     const maxCs: string | null = (latestRows[0] as Record<string, string | null>)?.max_cs ?? null

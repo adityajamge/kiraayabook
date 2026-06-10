@@ -16,6 +16,15 @@ export const POST = withAuth(async (request: Request) => {
   const file = formData.get('file') as File | null
   if (!file) return Response.json({ error: 'file is required' }, { status: 400 })
 
+  const ALLOWED_LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+  const MAX_LOGO_BYTES = 5 * 1024 * 1024
+  if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+    return Response.json({ error: 'Logo must be a JPEG, PNG, or WebP image' }, { status: 400 })
+  }
+  if (file.size > MAX_LOGO_BYTES) {
+    return Response.json({ error: 'Logo must be smaller than 5 MB' }, { status: 400 })
+  }
+
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 

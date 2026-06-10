@@ -79,23 +79,36 @@ export const tenants = pgTable('tenants', {
 ])
 
 export const rent_records = pgTable('rent_records', {
-  id:           uuid('id').defaultRandom().primaryKey(),
-  org_id:       uuid('org_id').notNull().references(() => organisations.id),
-  property_id:  uuid('property_id').notNull().references(() => properties.id),
-  tenant_id:    uuid('tenant_id').notNull().references(() => tenants.id),
-  amount:       integer('amount').notNull(),
-  period_start: date('period_start').notNull(),
-  period_end:   date('period_end').notNull(),
-  due_date:     date('due_date').notNull(),
-  paid_date:    date('paid_date'),
-  payment_mode: text('payment_mode'),
-  status:       text('status').notNull().default('pending'),
-  bill_no:      integer('bill_no'),
-  created_at:   timestamp('created_at').defaultNow(),
+  id:          uuid('id').defaultRandom().primaryKey(),
+  org_id:      uuid('org_id').notNull().references(() => organisations.id),
+  property_id: uuid('property_id').notNull().references(() => properties.id),
+  tenant_id:   uuid('tenant_id').notNull().references(() => tenants.id),
+  amount_due:  integer('amount_due').notNull(),
+  cycle_start: date('cycle_start').notNull(),
+  cycle_end:   date('cycle_end').notNull(),
+  status:      text('status').notNull().default('pending'),
+  bill_no:     integer('bill_no'),
+  created_at:  timestamp('created_at').defaultNow(),
 }, (t) => [
-  index('rent_records_org_id_status_due_date_idx').on(t.org_id, t.status, t.due_date),
-  index('rent_records_org_id_tenant_id_due_date_idx').on(t.org_id, t.tenant_id, t.due_date),
-  uniqueIndex('rent_records_tenant_id_due_date_uidx').on(t.tenant_id, t.due_date),
+  index('rent_records_org_id_status_cycle_start_idx').on(t.org_id, t.status, t.cycle_start),
+  index('rent_records_org_id_tenant_id_cycle_start_idx').on(t.org_id, t.tenant_id, t.cycle_start),
+  uniqueIndex('rent_records_tenant_id_cycle_start_uidx').on(t.tenant_id, t.cycle_start),
+])
+
+export const payments = pgTable('payments', {
+  id:             uuid('id').defaultRandom().primaryKey(),
+  org_id:         uuid('org_id').notNull().references(() => organisations.id),
+  property_id:    uuid('property_id').notNull().references(() => properties.id),
+  tenant_id:      uuid('tenant_id').notNull().references(() => tenants.id),
+  rent_record_id: uuid('rent_record_id').notNull().references(() => rent_records.id),
+  amount:         integer('amount').notNull(),
+  paid_date:      date('paid_date').notNull(),
+  payment_mode:   text('payment_mode'),
+  note:           text('note'),
+  created_at:     timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('payments_org_id_rent_record_id_idx').on(t.org_id, t.rent_record_id),
+  index('payments_org_id_tenant_id_idx').on(t.org_id, t.tenant_id),
 ])
 
 export const platform_config = pgTable('platform_config', {

@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { tenants, rooms } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and, count } from 'drizzle-orm'
+import { ensureRentRecordsUpToDate } from '@/lib/rent'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
@@ -65,6 +66,16 @@ export async function POST(request: Request) {
       rent_amount:   rent_amount ? Number(rent_amount) : undefined,
     })
     .returning()
+
+  // Fire-and-forget — generate first rent cycle immediately
+  if (tenant.rent_amount) {
+    ensureRentRecordsUpToDate(org_id, room.property_id, {
+      id:           tenant.id,
+      move_in_date: tenant.move_in_date,
+      rent_amount:  tenant.rent_amount,
+      property_id:  tenant.property_id,
+    }).catch(() => { /* non-fatal */ })
+  }
 
   return Response.json(tenant, { status: 201 })
 }

@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { tenants, rooms } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
+import { ensureRentRecordsUpToDate, deletePendingRecords } from '@/lib/rent'
 
 export async function GET(
   request: Request,
@@ -32,6 +33,19 @@ export async function PATCH(
   const property_id = getPropertyId(request)
   const { id } = await params
   const body = await request.json()
+
+  // Fetch current tenant to detect move_in_date change
+  const [existing] = await db
+    .select({ move_in_date: tenants.move_in_date, rent_amount: tenants.rent_amount, property_id: tenants.property_id })
+    .from(tenants)
+    .where(and(
+      eq(tenants.id, id),
+      eq(tenants.org_id, org_id),
+      ...(property_id ? [eq(tenants.property_id, property_id)] : []),
+    ))
+
+  if (!existing) return Response.json({ error: 'Not found' }, { status: 404 })
+
   const normalized: Partial<typeof tenants.$inferInsert> = {}
   if (body.name          !== undefined) normalized.name          = body.name
   if (body.phone         !== undefined) normalized.phone         = body.phone
@@ -64,6 +78,22 @@ export async function PATCH(
     .returning()
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  const moveInChanged = body.move_in_date !== undefined && body.move_in_date !== existing.move_in_date
+
+  if (moveInChanged) {
+    // Delete all pending records and regenerate from new move_in_date
+    await deletePendingRecords(id, org_id)
+    if (tenant.rent_amount) {
+      await ensureRentRecordsUpToDate(org_id, tenant.property_id, {
+        id:           tenant.id,
+        move_in_date: tenant.move_in_date,
+        rent_amount:  tenant.rent_amount,
+        property_id:  tenant.property_id,
+      })
+    }
+  }
+
   return Response.json(tenant)
 }
 

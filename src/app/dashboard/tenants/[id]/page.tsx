@@ -16,10 +16,11 @@ interface Tenant {
 interface Document { id: string; doc_type: string; file_url: string; uploaded_at: string }
 interface Room { id: string; room_number: string }
 interface RentRecord {
-  id: string; tenant_id: string; amount: number
-  period_start: string; period_end: string
-  due_date: string; paid_date: string | null
-  payment_mode: string | null; status: string; bill_no: number
+  id: string; tenant_id: string
+  amount_due: number; amount_paid: number; balance: number
+  cycle_start: string; cycle_end: string
+  last_paid_date: string | null; last_payment_mode: string | null
+  status: string; bill_no: number | null
 }
 interface OrgSettings {
   logo_url: string | null; bill_notes: string | null
@@ -106,15 +107,15 @@ export default function TenantDetailPage() {
       phones:      property?.phones  ?? null,
       logoUrl:     org.logo_url,
       billNotes:   org.bill_notes,
-      billNo:      String(r.bill_no),
-      date:        r.paid_date ?? new Date().toISOString().slice(0, 10),
+      billNo:      r.bill_no ? String(r.bill_no) : '—',
+      date:        r.last_paid_date ?? new Date().toISOString().slice(0, 10),
       tenantName:  tenant.name,
       roomNumber:  roomMap[tenant.room_id] ?? '—',
       joiningDate: tenant.move_in_date,
-      periodFrom:  r.period_start,
-      periodTo:    r.period_end,
-      amount:      r.amount,
-      paymentMode: r.payment_mode,
+      periodFrom:  r.cycle_start,
+      periodTo:    r.cycle_end,
+      amount:      r.amount_due,
+      paymentMode: r.last_payment_mode,
       status:      r.status,
     }
   }
@@ -186,8 +187,8 @@ export default function TenantDetailPage() {
     </div>
   )
 
-  const paidCount = rentRecords.filter((r) => r.status === 'paid').length
-  const pendingAmount = rentRecords.filter((r) => r.status === 'pending').reduce((s, r) => s + r.amount, 0)
+  const paidCount     = rentRecords.filter(r => r.status === 'paid').length
+  const pendingAmount = rentRecords.filter(r => r.status !== 'paid').reduce((s, r) => s + r.balance, 0)
 
   return (
     <div>
@@ -469,24 +470,26 @@ export default function TenantDetailPage() {
               <p className="text-sm text-gray-400">{t('tenants.noRentRecords')}</p>
             </div>
           ) : (
-            rentRecords.map((r) => {
-              const overdue = r.status === 'pending' && new Date(r.due_date) < new Date()
+            rentRecords.map(r => {
+              const overdue   = r.status !== 'paid' && new Date(r.cycle_start) < new Date()
+              const isPartial = r.status === 'partial'
               return (
                 <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div>
                       <p className="text-sm font-semibold dark:text-white">
-                        {new Date(r.period_start).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                        {new Date(r.cycle_start).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                         {' – '}
-                        {new Date(r.period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {t('tenants.due', { date: new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) })}
+                        {new Date(r.cycle_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>
                     {r.status === 'paid' ? (
                       <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full">
                         <CheckCircle className="w-3 h-3" /> {t('common.paid')}
+                      </span>
+                    ) : isPartial ? (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400 px-2.5 py-1 rounded-full">
+                        <Clock className="w-3 h-3" /> Partial
                       </span>
                     ) : overdue ? (
                       <span className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 px-2.5 py-1 rounded-full">
@@ -500,11 +503,16 @@ export default function TenantDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-base font-bold dark:text-white">₹{r.amount.toLocaleString('en-IN')}</p>
-                      {r.paid_date && (
+                      <p className="text-base font-bold dark:text-white">₹{r.amount_due.toLocaleString('en-IN')}</p>
+                      {isPartial && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          ₹{r.amount_paid.toLocaleString('en-IN')} paid · ₹{r.balance.toLocaleString('en-IN')} remaining
+                        </p>
+                      )}
+                      {r.status === 'paid' && r.last_paid_date && (
                         <p className="text-xs text-gray-400">
-                          {t('tenants.paidOn', { date: new Date(r.paid_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) })}
-                          {r.payment_mode ? ` · ${r.payment_mode}` : ''}
+                          {t('tenants.paidOn', { date: new Date(r.last_paid_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) })}
+                          {r.last_payment_mode ? ` · ${r.last_payment_mode}` : ''}
                         </p>
                       )}
                     </div>

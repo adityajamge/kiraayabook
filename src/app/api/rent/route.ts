@@ -1,83 +1,66 @@
 import { db } from '@/lib/db'
-import { rent_records, tenants } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
-import { eq, and, sql, count } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
-  const month = searchParams.get('month')
 
-  const propertyFilter = property_id ? sql` AND property_id = ${property_id}` : sql``
+  const tenant_id = searchParams.get('tenant_id')
+  const limit     = Math.min(parseInt(searchParams.get('limit')  ?? '500', 10), 500)
+  const offset    = Math.max(parseInt(searchParams.get('offset') ?? '0',   10), 0)
 
-  if (month) {
-    const result = await db.execute(sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'paid')::int    AS paid_count,
-        COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
-      FROM rent_records
-      WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month} ${propertyFilter}
-    `)
-    const rows = Array.isArray(result) ? result : result?.rows ?? []
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Response.json((rows as any)[0])
-  }
+  const propertyFilter = property_id ? sql` AND rr.property_id = ${property_id}` : sql``
+  const tenantFilter   = tenant_id   ? sql` AND rr.tenant_id   = ${tenant_id}`   : sql``
 
-  const tenant_id  = searchParams.get('tenant_id')
-  const due_month  = searchParams.get('due_month')  // YYYY-MM — filters list by due_date month
-  const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 500)
-  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0',  10), 0)
+  // When fetching for a specific tenant (history tab) return all statuses.
+  // Otherwise (Collect Rent tab) return only pending/partial records.
+  const statusFilter = tenant_id
+    ? sql``
+    : sql` AND rr.status IN ('pending', 'partial')`
 
-  const conditions = [eq(rent_records.org_id, org_id)]
-  if (tenant_id)   conditions.push(eq(rent_records.tenant_id, tenant_id))
-  if (property_id) conditions.push(eq(rent_records.property_id, property_id))
-  if (due_month)   conditions.push(sql`TO_CHAR(${rent_records.due_date}, 'YYYY-MM') = ${due_month}`)
-
-  const [countRows, rows] = await Promise.all([
-    db.select({ total: count() }).from(rent_records).where(and(...conditions)),
-    db.select().from(rent_records).where(and(...conditions)).orderBy(rent_records.due_date).limit(limit).offset(offset),
-  ])
-
-  return Response.json({ data: rows, total: countRows[0].total, limit, offset })
-}
-
-export async function POST(request: Request) {
-  const org_id = await getOrgId(request)
-  const property_id = getPropertyId(request)
-  const body = await request.json()
-
-  const { tenant_id, amount, period_start, period_end, due_date, payment_mode } = body
-
-  if (!tenant_id || !amount || !period_start || !period_end || !due_date) {
-    return Response.json({ error: 'tenant_id, amount, period_start, period_end, and due_date are required' }, { status: 400 })
-  }
-
-  if (payment_mode && !['cash', 'online', 'cheque'].includes(payment_mode)) {
-    return Response.json({ error: 'payment_mode must be cash, online, or cheque' }, { status: 400 })
-  }
-
-  const [tenant] = await db
-    .select({ property_id: tenants.property_id })
-    .from(tenants)
-    .where(and(eq(tenants.id, tenant_id), eq(tenants.org_id, org_id)))
-
-  if (!tenant) return Response.json({ error: 'Tenant not found.' }, { status: 404 })
-
-  const propertyFilter = property_id ? sql` AND property_id = ${property_id}` : sql``
-
-  const maxResult = await db.execute(sql`
-    SELECT COALESCE(MAX(bill_no), 0) AS max_bill_no FROM rent_records WHERE org_id = ${org_id} ${propertyFilter}
+  const rows = await db.execute(sql`
+    SELECT
+      rr.id,
+      rr.org_id,
+      rr.property_id,
+      rr.tenant_id,
+      rr.amount_due,
+      rr.cycle_start,
+      rr.cycle_end,
+      rr.status,
+      rr.bill_no,
+      rr.created_at,
+      COALESCE(SUM(p.amount), 0)::int  AS amount_paid,
+      (rr.amount_due - COALESCE(SUM(p.amount), 0))::int AS balance,
+      -- latest payment info for display
+      MAX(p.paid_date)::text            AS last_paid_date,
+      (array_agg(p.payment_mode ORDER BY p.created_at DESC))[1] AS last_payment_mode
+    FROM rent_records rr
+    LEFT JOIN payments p ON p.rent_record_id = rr.id
+    WHERE rr.org_id = ${org_id}
+      ${propertyFilter}
+      ${tenantFilter}
+      ${statusFilter}
+    GROUP BY rr.id
+    ORDER BY rr.cycle_start ASC
+    LIMIT ${limit} OFFSET ${offset}
   `)
-  const rows = Array.isArray(maxResult) ? maxResult : (maxResult?.rows ?? [])
-  const max_bill_no = Number((rows[0] as Record<string, unknown>)?.max_bill_no ?? 0)
 
-  const [record] = await db
-    .insert(rent_records)
-    .values({ org_id, property_id: tenant.property_id, tenant_id, amount, period_start, period_end, due_date, payment_mode, bill_no: max_bill_no + 1 })
-    .returning()
+  const data  = Array.isArray(rows) ? rows : rows?.rows ?? []
 
-  return Response.json(record, { status: 201 })
+  // Count query (separate, lightweight)
+  const countRows = await db.execute(sql`
+    SELECT COUNT(*)::int AS total
+    FROM rent_records rr
+    WHERE rr.org_id = ${org_id}
+      ${propertyFilter}
+      ${tenantFilter}
+      ${statusFilter}
+  `)
+  const countData = Array.isArray(countRows) ? countRows : countRows?.rows ?? []
+  const total = (countData[0] as { total: number })?.total ?? 0
+
+  return Response.json({ data, total, limit, offset })
 }

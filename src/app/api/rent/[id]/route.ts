@@ -1,37 +1,64 @@
 import { db } from '@/lib/db'
-import { rent_records } from '@/lib/db/schema'
+import { payments } from '@/lib/db/schema'
 import { getOrgId, getPropertyId } from '@/lib/middleware'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
+import { recomputeStatus } from '@/lib/rent'
 
-export async function PATCH(
+/**
+ * GET /api/rent/[id] — fetch a single rent record with payment summary.
+ */
+export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
-  const body = await request.json()
 
-  const { payment_mode } = body
-  if (payment_mode && !['cash', 'online', 'cheque'].includes(payment_mode)) {
-    return Response.json({ error: 'payment_mode must be cash, online, or cheque' }, { status: 400 })
+  const propertyFilter = property_id ? sql` AND rr.property_id = ${property_id}` : sql``
+
+  const rows = await db.execute(sql`
+    SELECT
+      rr.*,
+      COALESCE(SUM(p.amount), 0)::int AS amount_paid,
+      (rr.amount_due - COALESCE(SUM(p.amount), 0))::int AS balance
+    FROM rent_records rr
+    LEFT JOIN payments p ON p.rent_record_id = rr.id
+    WHERE rr.id = ${id} AND rr.org_id = ${org_id} ${propertyFilter}
+    GROUP BY rr.id
+  `)
+  const data = Array.isArray(rows) ? rows : rows?.rows ?? []
+  if (!data[0]) return Response.json({ error: 'Not found' }, { status: 404 })
+  return Response.json(data[0])
+}
+
+/**
+ * GET /api/rent/[id]/payments — list all payments for a rent record.
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // DELETE a payment: body must include payment_id
+  const org_id = await getOrgId(request)
+  const { id: rent_record_id } = await params
+  const { payment_id } = await request.json().catch(() => ({}))
+
+  if (!payment_id) {
+    return Response.json({ error: 'payment_id is required' }, { status: 400 })
   }
-  const today = new Date().toISOString().split('T')[0]
 
-  const [record] = await db
-    .update(rent_records)
-    .set({
-      status: 'paid',
-      paid_date: today,
-      ...(payment_mode ? { payment_mode } : {}),
-    })
+  const [deleted] = await db
+    .delete(payments)
     .where(and(
-      eq(rent_records.id, id),
-      eq(rent_records.org_id, org_id),
-      ...(property_id ? [eq(rent_records.property_id, property_id)] : []),
+      eq(payments.id, payment_id),
+      eq(payments.rent_record_id, rent_record_id),
+      eq(payments.org_id, org_id),
     ))
     .returning()
 
-  if (!record) return Response.json({ error: 'Not found' }, { status: 404 })
-  return Response.json(record)
+  if (!deleted) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  const status = await recomputeStatus(rent_record_id, org_id)
+  return Response.json({ ok: true, status })
 }

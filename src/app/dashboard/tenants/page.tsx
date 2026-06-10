@@ -23,16 +23,12 @@ interface Tenant {
 interface CollectRecord {
   id: string
   tenant_id: string
-  tenant_name: string
-  phone: string
-  room_number: string
-  rent_amount: number | null
-  amount: number
-  period_start: string
-  period_end: string
-  due_date: string
-  paid_date: string | null
-  payment_mode: string | null
+  property_id: string
+  amount_due: number
+  amount_paid: number
+  balance: number
+  cycle_start: string
+  cycle_end: string
   status: string
 }
 
@@ -62,7 +58,7 @@ export default function TenantsPage() {
   const [collectRecords, setCollectRecords] = useState<CollectRecord[]>([])
   const [collectFilter, setCollectFilter] = useState<'pending' | 'all'>('pending')
   const [collectLoading, setCollectLoading] = useState(false)
-  const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null)
+  const [payDialog, setPayDialog] = useState<{ record: CollectRecord; name: string } | null>(null)
   const [payMode, setPayMode] = useState('cash')
   const [marking, setMarking] = useState(false)
   const [orgName, setOrgName] = useState('Your PG')
@@ -82,15 +78,14 @@ export default function TenantsPage() {
 
   const loadCollect = async () => {
     setCollectLoading(true)
-    const res = await fetch('/api/rent/generate', { method: 'POST' })
-    setCollectRecords(await res.json())
+    await fetch('/api/rent/ensure', { method: 'POST' }).catch(() => {})
+    const res = await fetch('/api/rent?limit=500')
+    setCollectRecords((await res.json()).data ?? [])
     setCollectLoading(false)
   }
 
-  const roomMap = useMemo(
-    () => Object.fromEntries(rooms.map((r) => [r.id, r.room_number])),
-    [rooms]
-  )
+  const roomMap   = useMemo(() => Object.fromEntries(rooms.map(r => [r.id, r.room_number])), [rooms])
+  const tenantMap = useMemo(() => Object.fromEntries(tenants.map(t => [t.id, t])), [tenants])
 
   const filtered = useMemo(
     () => tenants.filter((tenant) => {
@@ -104,7 +99,7 @@ export default function TenantsPage() {
 
   const visibleCollect = useMemo(
     () => collectFilter === 'pending'
-      ? collectRecords.filter((r) => r.status === 'pending')
+      ? collectRecords.filter(r => r.status !== 'paid')
       : collectRecords,
     [collectRecords, collectFilter]
   )
@@ -147,10 +142,15 @@ export default function TenantsPage() {
   const handleMarkPaid = async () => {
     if (!payDialog) return
     setMarking(true)
-    await fetch(`/api/rent/${payDialog.id}`, {
-      method: 'PATCH',
+    await fetch('/api/payments', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment_mode: payMode }),
+      body: JSON.stringify({
+        rent_record_id: payDialog.record.id,
+        amount:         payDialog.record.balance,
+        paid_date:      new Date().toISOString().slice(0, 10),
+        payment_mode:   payMode,
+      }),
     })
     setMarking(false)
     setPayDialog(null)
@@ -158,16 +158,16 @@ export default function TenantsPage() {
     loadCollect()
   }
 
-  const sendWhatsApp = (r: CollectRecord) => {
-    const dueStr = new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    const msg = encodeURIComponent(t('whatsapp.rentDue', { name: r.tenant_name, amount: r.amount, date: dueStr, pgName: orgName }))
-    window.open(`https://wa.me/91${r.phone}?text=${msg}`, '_blank')
+  const sendWhatsApp = (r: CollectRecord, tenantName: string, phone: string) => {
+    const dueStr = new Date(r.cycle_start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    const msg = encodeURIComponent(t('whatsapp.rentDue', { name: tenantName, amount: String(r.balance), date: dueStr, pgName: orgName }))
+    window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank')
   }
 
   const setField = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
   const { pendingCount, pendingTotal } = useMemo(() => {
-    const pending = collectRecords.filter((r) => r.status === 'pending')
-    return { pendingCount: pending.length, pendingTotal: pending.reduce((s, r) => s + r.amount, 0) }
+    const unpaid = collectRecords.filter(r => r.status !== 'paid')
+    return { pendingCount: unpaid.length, pendingTotal: unpaid.reduce((s, r) => s + r.balance, 0) }
   }, [collectRecords])
   const { activeCount, vacatedCount } = useMemo(() => ({
     activeCount:  tenants.filter((t) => t.status === 'active').length,
@@ -403,26 +403,18 @@ export default function TenantsPage() {
           {/* Collect summary card */}
           {!collectLoading && collectRecords.length > 0 && (
             <div className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-4 mb-4">
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <p className="text-xl font-bold text-red-400">{fmt(pendingTotal)}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{pendingCount} pending</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{pendingCount} unpaid</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-bold text-green-400">
-                    {fmt(collectRecords.filter((r) => r.status === 'paid').reduce((s, r) => s + r.amount, 0))}
+                  <p className="text-xl font-bold text-orange-400">
+                    {collectRecords.filter(r => r.status === 'partial').length}
                   </p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{collectRecords.filter((r) => r.status === 'paid').length} collected</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">partial</p>
                 </div>
               </div>
-              {collectRecords.length > 0 && (
-                <div className="w-full bg-gray-700 rounded-full h-1.5">
-                  <div
-                    className="bg-green-400 rounded-full h-1.5 transition-all"
-                    style={{ width: `${Math.round((collectRecords.filter((r) => r.status === 'paid').length / collectRecords.length) * 100)}%` }}
-                  />
-                </div>
-              )}
             </div>
           )}
 
@@ -465,43 +457,56 @@ export default function TenantsPage() {
             </div>
           ) : (
             <div className="space-y-2.5">
-              {visibleCollect.map((r) => (
-                <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
-                      {initials(r.tenant_name)}
+              {visibleCollect.map((r) => {
+                const tenant    = tenantMap[r.tenant_id]
+                const tenantName = tenant?.name ?? '—'
+                const roomNum   = tenant ? roomMap[tenant.room_id] ?? '—' : '—'
+                const isPartial = r.status === 'partial'
+                return (
+                  <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-sm font-bold shrink-0 dark:text-white">
+                        {initials(tenantName)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm dark:text-white">{tenantName}</p>
+                        <p className="text-xs text-gray-500">{t('common.room')} {roomNum} · {fmt(r.amount_due)}</p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+                        isPartial ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600'
+                      }`}>
+                        {isPartial ? 'Partial' : t('common.pending')}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm dark:text-white">{r.tenant_name}</p>
-                      <p className="text-xs text-gray-500">{t('common.room')} {r.room_number} · {fmt(r.amount)}</p>
-                    </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${r.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                      {r.status === 'paid' ? '✓ ' + t('common.paid') : t('common.pending')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">
-                      {t('tenants.due', { date: new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) })}
-                    </p>
-                    {r.status === 'pending' && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {isPartial && (
+                          <p className="text-xs text-yellow-600">{fmt(r.amount_paid)} paid · {fmt(r.balance)} left</p>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          {new Date(r.cycle_start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' – '}
+                          {new Date(r.cycle_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => { setPayDialog({ id: r.id, name: r.tenant_name }); setPayMode('cash') }}
+                          onClick={() => { setPayDialog({ record: r, name: tenantName }); setPayMode('cash') }}
                           className="flex items-center gap-1.5 text-xs bg-gray-900 text-white font-semibold px-3 py-1.5 rounded-full hover:bg-gray-700"
                         >
                           <CheckCircle className="w-3.5 h-3.5" />{t('tenants.markPaid')}
                         </button>
                         <button
-                          onClick={() => sendWhatsApp(r)}
+                          onClick={() => sendWhatsApp(r, tenantName, tenant?.phone ?? '')}
                           className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600"
                         >
                           <MessageCircle className="w-4 h-4 text-white" />
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
@@ -513,6 +518,11 @@ export default function TenantsPage() {
           <DialogHeader><DialogTitle>{t('rent.markAsPaid')}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <p className="text-sm text-gray-500">{t('rent.recordingPaymentFor')} <span className="font-medium text-black dark:text-white">{payDialog?.name}</span></p>
+            {payDialog?.record.status === 'partial' && (
+              <p className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded-xl">
+                Balance: {payDialog ? fmt(payDialog.record.balance) : ''}
+              </p>
+            )}
             <div>
               <label className="block text-sm font-medium mb-1">{t('rent.paymentMode')}</label>
               <select
@@ -520,9 +530,9 @@ export default function TenantsPage() {
                 onChange={(e) => setPayMode(e.target.value)}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm outline-none bg-white dark:bg-gray-800 dark:text-white"
               >
+                <option value="online">{t('rent.online')}</option>
                 <option value="cash">{t('rent.cash')}</option>
-                <option value="upi">{t('rent.upi')}</option>
-                <option value="bank">{t('rent.bankTransfer')}</option>
+                <option value="cheque">{t('rent.cheque')}</option>
               </select>
             </div>
             <div className="flex gap-3 pt-1">

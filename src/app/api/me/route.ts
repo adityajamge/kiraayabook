@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { organisations, users } from '@/lib/db/schema'
-import { getAuthContext } from '@/lib/middleware'
+import { getAuthContext, withAuth} from '@/lib/middleware'
 import { eq } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const { org_id, user_id } = await getAuthContext(request)
 
   const [[org], [user]] = await Promise.all([
@@ -18,4 +18,4 @@ export async function GET(request: Request) {
   if (!org || !user) return Response.json({ error: 'Not found' }, { status: 404 })
 
   return Response.json({ ...user, org_id, org_name: org.name, plan: org.plan })
-}
+})

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { organisations } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, withAuth} from '@/lib/middleware'
 import { eq } from 'drizzle-orm'
 import { v2 as cloudinary } from 'cloudinary'
 
@@ -10,7 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const formData = await request.formData()
   const file = formData.get('file') as File | null
@@ -38,10 +38,10 @@ export async function POST(request: Request) {
 
   await db.update(organisations).set({ logo_url }).where(eq(organisations.id, org_id))
   return Response.json({ logo_url })
-}
+})
 
-export async function DELETE(request: Request) {
+export const DELETE = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   await db.update(organisations).set({ logo_url: null }).where(eq(organisations.id, org_id))
   return Response.json({ ok: true })
-}
+})

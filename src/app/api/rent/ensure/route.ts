@@ -1,7 +1,7 @@
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { ensureRentRecordsUpToDate } from '@/lib/rent'
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
 
@@ -11,4 +11,4 @@ export async function POST(request: Request) {
 
   await ensureRentRecordsUpToDate(org_id, property_id)
   return Response.json({ ok: true })
-}
+})

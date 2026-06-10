@@ -1,10 +1,10 @@
 import { db } from '@/lib/db'
 import { users, properties } from '@/lib/db/schema'
-import { getAuthContext } from '@/lib/middleware'
+import { getAuthContext, withAuth} from '@/lib/middleware'
 import { and, eq, ne } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const { org_id, role } = await getAuthContext(request)
 
   if (role !== 'owner') {
@@ -27,9 +27,9 @@ export async function GET(request: Request) {
     .orderBy(users.created_at)
 
   return Response.json(rows)
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const { org_id, role } = await getAuthContext(request)
 
   if (role !== 'owner') {
@@ -66,4 +66,4 @@ export async function POST(request: Request) {
     .returning({ id: users.id, name: users.name, email: users.email, role: users.role, property_id: users.property_id, created_at: users.created_at })
 
   return Response.json(user, { status: 201 })
-}
+})

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getAuthContext } from '@/lib/middleware'
+import { getAuthContext, withAuth} from '@/lib/middleware'
 import { db } from '@/lib/db'
 import { properties } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const { org_id, role } = await getAuthContext(request)
 
   if (role !== 'owner') {
@@ -37,4 +37,4 @@ export async function POST(request: Request) {
   }
 
   return response
-}
+})

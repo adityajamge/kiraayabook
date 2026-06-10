@@ -1,13 +1,13 @@
 import { db } from '@/lib/db'
 import { tenants, rooms } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 import { ensureRentRecordsUpToDate, deletePendingRecords } from '@/lib/rent'
 
-export async function GET(
+export const GET = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
@@ -23,12 +23,12 @@ export async function GET(
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(tenant)
-}
+})
 
-export async function PATCH(
+export const PATCH = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
@@ -95,12 +95,12 @@ export async function PATCH(
   }
 
   return Response.json(tenant)
-}
+})
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
@@ -116,4 +116,4 @@ export async function DELETE(
 
   if (!tenant) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ ok: true })
-}
+})

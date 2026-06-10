@@ -1,13 +1,13 @@
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
-import { getAuthContext } from '@/lib/middleware'
+import { getAuthContext, withAuth} from '@/lib/middleware'
 import { and, eq, ne } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
-export async function PATCH(
+export const PATCH = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const { org_id, role } = await getAuthContext(request)
   if (role !== 'owner') return Response.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -41,12 +41,12 @@ export async function PATCH(
 
   if (!user) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(user)
-}
+})
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const { org_id, role } = await getAuthContext(request)
   if (role !== 'owner') return Response.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -59,4 +59,4 @@ export async function DELETE(
 
   if (!user) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ ok: true })
-}
+})

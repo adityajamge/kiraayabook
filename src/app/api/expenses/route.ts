@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { expenses } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { eq, and, desc, count, gte, lt } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
@@ -27,9 +27,9 @@ export async function GET(request: Request) {
   ])
 
   return Response.json({ data: rows, total: countRows[0].total, limit, offset })
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   if (!property_id)
@@ -42,4 +42,4 @@ export async function POST(request: Request) {
     .values({ org_id, property_id, description, amount: Number(amount), date })
     .returning()
   return Response.json(row, { status: 201 })
-}
+})

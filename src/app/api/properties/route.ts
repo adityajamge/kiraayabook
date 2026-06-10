@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { properties, rooms, tenants } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, withAuth} from '@/lib/middleware'
 import { eq, sql } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
 
   const rows = await db.execute(sql`
@@ -21,9 +21,9 @@ export async function GET(request: Request) {
 
   const result = Array.isArray(rows) ? rows : rows?.rows ?? []
   return Response.json(result)
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const { name, address, phones } = await request.json()
 
@@ -37,4 +37,4 @@ export async function POST(request: Request) {
     .returning()
 
   return Response.json(property, { status: 201 })
-}
+})

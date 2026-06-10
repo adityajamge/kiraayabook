@@ -1,10 +1,10 @@
 import { db } from '@/lib/db'
 import { payments, rent_records } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { eq, and, sql } from 'drizzle-orm'
 import { recomputeStatus } from '@/lib/rent'
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const body = await request.json()
@@ -67,9 +67,9 @@ export async function POST(request: Request) {
   const status = await recomputeStatus(rent_record_id, org_id)
 
   return Response.json({ payment, status }, { status: 201 })
-}
+})
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const { searchParams } = new URL(request.url)
   const rent_record_id = searchParams.get('rent_record_id')
@@ -90,4 +90,4 @@ export async function GET(request: Request) {
     .orderBy(payments.paid_date)
 
   return Response.json(rows)
-}
+})

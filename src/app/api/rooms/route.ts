@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { rooms, tenants } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { eq, sql } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
@@ -38,9 +38,9 @@ export async function GET(request: Request) {
   const total     = Number((countRows[0] as Record<string, unknown>)?.total ?? 0)
 
   return Response.json({ data: rows, total, limit, offset })
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const body = await request.json()
@@ -80,4 +80,4 @@ export async function POST(request: Request) {
     .returning()
 
   return Response.json(room, { status: 201 })
-}
+})

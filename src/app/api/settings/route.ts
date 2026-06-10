@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { organisations } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, withAuth} from '@/lib/middleware'
 import { eq } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const [org] = await db
     .select({
@@ -19,9 +19,9 @@ export async function GET(request: Request) {
     .from(organisations)
     .where(eq(organisations.id, org_id))
   return Response.json(org)
-}
+})
 
-export async function PUT(request: Request) {
+export const PUT = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const body = await request.json()
 
@@ -43,4 +43,4 @@ export async function PUT(request: Request) {
     .where(eq(organisations.id, org_id))
     .returning()
   return Response.json(updated)
-}
+})

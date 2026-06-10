@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { expenses } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { and, eq } from 'drizzle-orm'
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withAuth(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
@@ -17,4 +17,4 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     .returning()
   if (!deleted) return Response.json({ error: 'Not found' }, { status: 404 })
   return new Response(null, { status: 204 })
-}
+})

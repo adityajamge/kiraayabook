@@ -1,8 +1,8 @@
 import { db } from '@/lib/db'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { sql } from 'drizzle-orm'
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { searchParams } = new URL(request.url)
@@ -103,4 +103,4 @@ export async function GET(request: Request) {
     vacant_rooms: vacantRooms,
     month,
   })
-}
+})

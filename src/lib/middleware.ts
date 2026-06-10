@@ -1,7 +1,30 @@
 import { verifyJwt, type JwtPayload } from '@/lib/auth'
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+export class AuthError extends Error {
+  readonly response: Response
+  constructor() {
+    super('Unauthorized')
+    this.response = new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+  }
+}
+
+// Wraps a route handler so that AuthError thrown by getOrgId / getAuthContext
+// becomes a proper 401 response instead of an unhandled 500.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withAuth<T extends (request: Request, ...args: any[]) => Promise<Response>>(handler: T): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (async (request: Request, ...args: any[]) => {
+    try {
+      return await handler(request, ...args)
+    } catch (e) {
+      if (e instanceof AuthError) return e.response
+      throw e
+    }
+  }) as T
+}
+
+function unauthorized(): never {
+  throw new AuthError()
 }
 
 function getCookieValue(header: string, name: string): string | null {

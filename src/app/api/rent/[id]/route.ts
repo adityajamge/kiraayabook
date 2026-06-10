@@ -1,16 +1,16 @@
 import { db } from '@/lib/db'
 import { payments } from '@/lib/db/schema'
-import { getOrgId, getPropertyId } from '@/lib/middleware'
+import { getOrgId, getPropertyId, withAuth} from '@/lib/middleware'
 import { eq, and, sql } from 'drizzle-orm'
 import { recomputeStatus } from '@/lib/rent'
 
 /**
  * GET /api/rent/[id] — fetch a single rent record with payment summary.
  */
-export async function GET(
+export const GET = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const property_id = getPropertyId(request)
   const { id } = await params
@@ -30,15 +30,12 @@ export async function GET(
   const data = Array.isArray(rows) ? rows : rows?.rows ?? []
   if (!data[0]) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(data[0])
-}
+})
 
-/**
- * GET /api/rent/[id]/payments — list all payments for a rent record.
- */
-export async function DELETE(
+export const DELETE = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   // DELETE a payment: body must include payment_id
   const org_id = await getOrgId(request)
   const { id: rent_record_id } = await params
@@ -61,4 +58,4 @@ export async function DELETE(
 
   const status = await recomputeStatus(rent_record_id, org_id)
   return Response.json({ ok: true, status })
-}
+})

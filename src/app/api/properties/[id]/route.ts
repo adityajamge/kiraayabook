@@ -1,12 +1,12 @@
 import { db } from '@/lib/db'
 import { properties } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, withAuth} from '@/lib/middleware'
 import { and, eq } from 'drizzle-orm'
 
-export async function PATCH(
+export const PATCH = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const { id } = await params
   const { name, address, phones } = await request.json()
@@ -23,12 +23,12 @@ export async function PATCH(
 
   if (!property) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(property)
-}
+})
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const org_id = await getOrgId(request)
   const { id } = await params
 
@@ -39,4 +39,4 @@ export async function DELETE(
 
   if (!property) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ ok: true })
-}
+})

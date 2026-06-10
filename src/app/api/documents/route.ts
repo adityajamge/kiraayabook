@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { documents, organisations, tenants } from '@/lib/db/schema'
-import { getOrgId } from '@/lib/middleware'
+import { getOrgId, withAuth} from '@/lib/middleware'
 import { eq, and } from 'drizzle-orm'
 
 async function refreshAccessToken(orgId: string, refreshToken: string, clientId: string, clientSecret: string): Promise<string> {
@@ -62,7 +62,7 @@ async function uploadToDrive(accessToken: string, folderId: string, file: File):
   return `https://drive.google.com/file/d/${data.id}/view`
 }
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
   const { searchParams } = new URL(request.url)
   const tenant_id = searchParams.get('tenant_id')
@@ -73,9 +73,9 @@ export async function GET(request: Request) {
 
   const rows = await db.select().from(documents).where(condition)
   return Response.json(rows)
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const org_id = await getOrgId(request)
 
   const [org] = await db
@@ -127,4 +127,4 @@ export async function POST(request: Request) {
     .returning()
 
   return Response.json(doc, { status: 201 })
-}
+})

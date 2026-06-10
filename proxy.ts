@@ -6,8 +6,18 @@ import { properties } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 export async function proxy(request: NextRequest) {
+  // Strip all client-supplied auth headers unconditionally — this proxy is the
+  // sole authority. Without this, an unauthenticated request carrying spoofed
+  // x-org-id / x-user-id / x-user-role headers bypasses every auth check.
+  const headers = new Headers(request.headers)
+  headers.delete('x-org-id')
+  headers.delete('x-user-id')
+  headers.delete('x-user-role')
+  headers.delete('x-property-id')
+  headers.delete('x-pathname')
+
   const token = request.cookies.get('kiraayabook_token')?.value
-  if (!token) return NextResponse.next()
+  if (!token) return NextResponse.next({ request: { headers } })
 
   const payload = await verifyJwt(token)
   if (!payload) {
@@ -18,10 +28,9 @@ export async function proxy(request: NextRequest) {
       response.cookies.delete('kiraayabook_property')
       return response
     }
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers } })
   }
 
-  const headers = new Headers(request.headers)
   headers.set('x-org-id', payload.org_id)
   headers.set('x-user-id', payload.user_id)
   headers.set('x-user-role', payload.role)

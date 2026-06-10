@@ -41,20 +41,20 @@ export async function GET(request: Request) {
     `),
     db.execute(sql`
       SELECT
-        COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
+        COALESCE(SUM(amount_due) FILTER (WHERE status = 'paid'), 0)::int    AS collected,
+        COALESCE(SUM(amount_due) FILTER (WHERE status = 'pending'), 0)::int AS pending_amount
       FROM rent_records
-      WHERE org_id = ${org_id} AND TO_CHAR(due_date, 'YYYY-MM') = ${month} ${pfT}
+      WHERE org_id = ${org_id} AND TO_CHAR(cycle_start, 'YYYY-MM') = ${month} ${pfT}
     `),
     db.execute(sql`
-      SELECT rr.id, rr.amount, rr.due_date,
+      SELECT rr.id, rr.amount_due, rr.cycle_start,
         t.id AS tenant_id, t.name AS tenant_name, t.phone,
         r.room_number
       FROM rent_records rr
       JOIN tenants t ON t.id = rr.tenant_id
       JOIN rooms r   ON r.id  = t.room_id
-      WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.due_date, 'YYYY-MM') = ${month} AND rr.status = 'pending' ${pfRR}
-      ORDER BY rr.amount DESC
+      WHERE rr.org_id = ${org_id} AND TO_CHAR(rr.cycle_start, 'YYYY-MM') = ${month} AND rr.status = 'pending' ${pfRR}
+      ORDER BY rr.amount_due DESC
     `),
     db.execute(sql`
       SELECT r.id, r.room_number, r.floor,
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
 
   const roomStatsRows = rowsOf<{ total_rooms: number; total_capacity: number; total_occupied: number }>(roomStatsRaw)
   const rentRows      = rowsOf<{ collected: number; pending_amount: number }>(rentRaw)
-  const pendingRent   = rowsOf<{ id: string; amount: number; due_date: string; tenant_id: string; tenant_name: string; phone: string; room_number: string }>(pendingRentRaw)
+  const pendingRent   = rowsOf<{ id: string; amount_due: number; cycle_start: string; tenant_id: string; tenant_name: string; phone: string; room_number: string }>(pendingRentRaw)
   const vacantRooms   = rowsOf<{ id: string; room_number: string; floor: string | null; vacant: number }>(vacantRoomsRaw)
   const expenseRows   = rowsOf<{ total: number }>(expenseRaw)
 

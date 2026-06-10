@@ -139,3 +139,13 @@ export const expenses = pgTable('expenses', {
 }, (t) => [
   index('expenses_org_id_date_idx').on(t.org_id, t.date),
 ])
+
+export const login_attempts = pgTable('login_attempts', {
+  id:           integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  ip:           text('ip').notNull(),
+  email:        text('email'),
+  attempted_at: timestamp('attempted_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index('login_attempts_ip_time_idx').on(t.ip, t.attempted_at),
+  index('login_attempts_email_time_idx').on(t.email, t.attempted_at),
+])

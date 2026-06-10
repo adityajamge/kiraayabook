@@ -22,32 +22,27 @@ async function getJwtPayload(req: Request): Promise<JwtPayload | null> {
 }
 
 export async function getOrgId(req: Request): Promise<string> {
-  const org_id = req.headers.get('x-org-id')
-  if (org_id) return org_id
-
+  // Never trust x-org-id from request headers. In Next.js 16 Node.js runtime,
+  // NextResponse.next({ request: { headers } }) does not strip client-supplied
+  // headers — an attacker can forge x-org-id to bypass auth. Always verify JWT.
   const payload = await getJwtPayload(req)
   if (!payload) throw unauthorized()
   return payload.org_id
 }
 
 export function getPropertyId(req: Request): string | null {
+  // property_id is only a filter within an already-verified org, so reading
+  // it from the proxy-injected header is acceptable. Fall back to the cookie
+  // (set by select-property or login) when the header is absent.
   const fromHeader = req.headers.get('x-property-id')
   if (fromHeader) return fromHeader
-  // Fallback: proxy.ts couldn't inject the header (e.g. Neon cold start in edge
-  // runtime). Read the cookie directly — it was validated when set by
-  // select-property or the login route, so this is equally safe.
   const cookieHeader = req.headers.get('cookie') ?? ''
   return getCookieValue(cookieHeader, 'kiraayabook_property')
 }
 
 export async function getAuthContext(req: Request): Promise<JwtPayload> {
-  const org_id = req.headers.get('x-org-id')
-  const user_id = req.headers.get('x-user-id')
-  const role = req.headers.get('x-user-role')
-  if (org_id && user_id && role) {
-    return { org_id, user_id, role, property_id: req.headers.get('x-property-id') }
-  }
-
+  // Never trust x-user-id / x-user-role from request headers for the same
+  // reason as getOrgId — always verify the JWT from the cookie.
   const payload = await getJwtPayload(req)
   if (!payload) throw unauthorized()
   return payload
